@@ -1,30 +1,55 @@
 package skyq.view;
 
-import skyq.dao.AvionDAO;
-import skyq.dao.PilotoDAO;
-import skyq.model.Avion;
-import skyq.model.Piloto;
-
+import java.awt.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.util.List;
+import skyq.dao.AvionDAO;
+import skyq.dao.HospedajeDAO;
+import skyq.dao.PilotoDAO;
+import skyq.dao.VueloDAO;
+import skyq.model.Avion;
+import skyq.model.Hospedaje;
+import skyq.model.Piloto;
+import skyq.model.Vuelo;
 
+/**
+ * Panel principal del Módulo A: Centro de Comando del Gerente.
+ *
+ * Arquitectura interna (CardLayout):
+ *   - PANTALLA_RADAR    → PanelRadarView con animación de barrido
+ *   - PANTALLA_DASHBOARD → Dashboard de 3 columnas:
+ *       Col 1: CRUD de aviones
+ *       Col 2: Diseñador de mapa de asientos
+ *       Col 3: Gestión interactiva de pilotos (cards + diálogos de vuelo y hospedaje)
+ */
 public class PanelGerente extends JPanel {
 
+    // ── Navegación principal ──
     private CardLayout cardNavigator;
     private JPanel mainDynamicContainer;
     private PanelRadarView panelRadarView;
-
     private JButton btnRadarView, btnRegistroView;
+
+    // ── Formulario de aviones ──
     private JTextField txtMatricula, txtModelo, txtCapacidad;
     private JComboBox<String> comboEstado;
     private JTextArea txtDescripcion;
     private JButton btnRegistrarAvion;
 
-    // Elementos del CRUD de Pilotos
-    private JTextArea areaPilotosUI;
+    // ── Panel de cards de pilotos ──
+    private JPanel panelCardsContainer;
+
+    // ── DAOs ──
     private final PilotoDAO pilotoDAO = new PilotoDAO();
+    private final VueloDAO vueloDAO   = new VueloDAO();
+    private final HospedajeDAO hospedajeDAO = new HospedajeDAO();
+
+    // Formateador de fechas para los diálogos
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public PanelGerente() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -32,39 +57,41 @@ public class PanelGerente extends JPanel {
         initComponents();
     }
 
+    // ═══════════════════════════════════════════════════════
+    //  INICIALIZACIÓN PRINCIPAL
+    // ═══════════════════════════════════════════════════════
+
     private void initComponents() {
-        // --- COLUMNA DE BARRA LATERAL (FIGMA) ---
-        JPanel sidebarMenu = new JPanel();
-        sidebarMenu.setBackground(EstiloUI.FONDO_TARJETA);
-        sidebarMenu.setPreferredSize(new Dimension(180, 800));
-        sidebarMenu.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(48, 54, 61)));
-        sidebarMenu.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 25));
+        // ── Sidebar de navegación ──
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(EstiloUI.FONDO_TARJETA);
+        sidebar.setPreferredSize(new Dimension(180, 800));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(48, 54, 61)));
+        sidebar.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 25));
 
-        btnRadarView = new JButton("Radar");
-        btnRegistroView = new JButton("Registro");
-
+        btnRadarView    = new JButton("✈  Radar");
+        btnRegistroView = new JButton("⚙  Registro");
         aplicarEstiloBotonMenu(btnRadarView, true);
         aplicarEstiloBotonMenu(btnRegistroView, false);
+        sidebar.add(btnRadarView);
+        sidebar.add(btnRegistroView);
+        add(sidebar, BorderLayout.WEST);
 
-        sidebarMenu.add(btnRadarView);
-        sidebarMenu.add(btnRegistroView);
-        add(sidebarMenu, BorderLayout.WEST);
-
-        // --- CONTENEDOR DINÁMICO ---
+        // ── Contenedor dinámico ──
         cardNavigator = new CardLayout();
         mainDynamicContainer = new JPanel(cardNavigator);
         mainDynamicContainer.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
 
         panelRadarView = new PanelRadarView();
         mainDynamicContainer.add(panelRadarView, "PANTALLA_RADAR");
-        mainDynamicContainer.add(construirDashboardGerente(), "PANTALLA_DASHBOARD");
-
+        mainDynamicContainer.add(construirDashboard(), "PANTALLA_DASHBOARD");
         add(mainDynamicContainer, BorderLayout.CENTER);
 
+        // ── Listeners de navegación ──
         btnRadarView.addActionListener(e -> {
             aplicarEstiloBotonMenu(btnRadarView, true);
             aplicarEstiloBotonMenu(btnRegistroView, false);
-            panelRadarView.recargarDatosAviones(); // Sincroniza el radar al abrirlo
+            panelRadarView.recargarDatosAviones();
             cardNavigator.show(mainDynamicContainer, "PANTALLA_RADAR");
         });
 
@@ -75,308 +102,897 @@ public class PanelGerente extends JPanel {
         });
     }
 
-    private JPanel construirDashboardGerente() {
+    // ═══════════════════════════════════════════════════════
+    //  DASHBOARD DE 3 COLUMNAS
+    // ═══════════════════════════════════════════════════════
+
+    private JPanel construirDashboard() {
         JPanel dashboard = new JPanel(new GridLayout(1, 3, 20, 0));
         dashboard.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         dashboard.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // 🏛️ CARD 1: ENTRADA DE DATOS DE AERONAVE
-        JPanel cardAeronave = new JPanel(new GridBagLayout());
-        cardAeronave.setBackground(EstiloUI.FONDO_TARJETA);
-        cardAeronave.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(15, 15, 15, 15)));
+        dashboard.add(construirColumnaAviones());
+        dashboard.add(construirColumnaMapeo());
+        dashboard.add(construirColumnaPilotos());
 
+        return dashboard;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  COLUMNA 1: CRUD de Aviones
+    // ═══════════════════════════════════════════════════════
+
+    private JPanel construirColumnaAviones() {
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(EstiloUI.FONDO_TARJETA);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(15, 15, 15, 15)));
+
+        // Placeholder de imagen de aeronave
         JPanel fotoPlaceholder = new JPanel(new BorderLayout());
         fotoPlaceholder.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         fotoPlaceholder.setPreferredSize(new Dimension(110, 110));
         fotoPlaceholder.setBorder(EstiloUI.BORDE_COMPONENTE);
-        JLabel lblPlus = new JLabel("+", SwingConstants.CENTER);
-        lblPlus.setForeground(EstiloUI.TEXTO_MUTED); lblPlus.setFont(new Font("SansSerif", Font.BOLD, 26));
+        JLabel lblPlus = new JLabel("✈", SwingConstants.CENTER);
+        lblPlus.setForeground(EstiloUI.TEXTO_MUTED);
+        lblPlus.setFont(new Font("SansSerif", Font.BOLD, 42));
         fotoPlaceholder.add(lblPlus, BorderLayout.CENTER);
 
-        txtMatricula = crearCampoTexto();
-        txtModelo = crearCampoTexto();
-        txtCapacidad = crearCampoTexto();
+        txtMatricula  = crearCampoTexto();
+        txtModelo     = crearCampoTexto();
+        txtCapacidad  = crearCampoTexto();
         txtDescripcion = new JTextArea(3, 10);
-        txtDescripcion.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); txtDescripcion.setForeground(EstiloUI.TEXTO_BLANCO); txtDescripcion.setBorder(EstiloUI.BORDE_COMPONENTE); txtDescripcion.setLineWrap(true);
+        txtDescripcion.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        txtDescripcion.setForeground(EstiloUI.TEXTO_BLANCO);
+        txtDescripcion.setBorder(EstiloUI.BORDE_COMPONENTE);
+        txtDescripcion.setLineWrap(true);
 
-        comboEstado = new JComboBox<>(new String[]{"Disponible", "En mantenimiento", "Fuera de servicio"});
-        comboEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); comboEstado.setForeground(EstiloUI.TEXTO_BLANCO); comboEstado.setBorder(EstiloUI.BORDE_COMPONENTE);
+        comboEstado = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"});
+        comboEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        comboEstado.setForeground(EstiloUI.TEXTO_BLANCO);
+        comboEstado.setBorder(EstiloUI.BORDE_COMPONENTE);
 
-        btnRegistrarAvion = new JButton("REGISTRAR EN FLOTA");
-        btnRegistrarAvion.setBackground(EstiloUI.AZUL_ACCENT); btnRegistrarAvion.setForeground(EstiloUI.TEXTO_BLANCO); btnRegistrarAvion.setFont(EstiloUI.FUENTE_COMPONENTE); btnRegistrarAvion.setBorderPainted(false);
+        btnRegistrarAvion = new JButton("✚  REGISTRAR EN FLOTA");
+        btnRegistrarAvion.setBackground(EstiloUI.AZUL_ACCENT);
+        btnRegistrarAvion.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnRegistrarAvion.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnRegistrarAvion.setBorderPainted(false);
+        PanelRadarView.aplicarHover(btnRegistrarAvion, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 5, 6, 5); g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(6, 5, 6, 5);
+        g.fill = GridBagConstraints.HORIZONTAL;
 
-        g.gridx = 0; g.gridy = 0; g.gridwidth = 2; g.fill = GridBagConstraints.NONE; cardAeronave.add(fotoPlaceholder, g);
+        g.gridx = 0; g.gridy = 0; g.gridwidth = 2; g.fill = GridBagConstraints.NONE;
+        card.add(fotoPlaceholder, g);
+
         g.fill = GridBagConstraints.HORIZONTAL; g.gridwidth = 1;
-        g.gridx = 0; g.gridy = 1; cardAeronave.add(crearLabelMuted("Matrícula:"), g); g.gridx = 1; cardAeronave.add(txtMatricula, g);
-        g.gridx = 0; g.gridy = 2; cardAeronave.add(crearLabelMuted("Modelo:"), g); g.gridx = 1; cardAeronave.add(txtModelo, g);
-        g.gridx = 0; g.gridy = 3; cardAeronave.add(crearLabelMuted("Capacidad:"), g); g.gridx = 1; cardAeronave.add(txtCapacidad, g);
-        g.gridx = 0; g.gridy = 4; cardAeronave.add(crearLabelMuted("Estado:"), g); g.gridx = 1; cardAeronave.add(comboEstado, g);
-        g.gridx = 0; g.gridy = 5; cardAeronave.add(crearLabelMuted("Descripción:"), g); g.gridx = 1; cardAeronave.add(new JScrollPane(txtDescripcion), g);
-        g.gridx = 0; g.gridy = 6; g.gridwidth = 2; g.insets = new Insets(15, 5, 5, 5); cardAeronave.add(btnRegistrarAvion, g);
+        g.gridx = 0; g.gridy = 1; card.add(crearLabel("Matrícula:"), g);
+        g.gridx = 1; card.add(txtMatricula, g);
 
-        dashboard.add(cardAeronave);
+        g.gridx = 0; g.gridy = 2; card.add(crearLabel("Modelo:"), g);
+        g.gridx = 1; card.add(txtModelo, g);
 
-        // 🗺️ CARD 2: MAPEO DE CUADRÍCULA DE CABINA
-        JPanel cardMapeo = new JPanel(new BorderLayout(10, 10));
-        cardMapeo.setBackground(EstiloUI.FONDO_TARJETA);
-        cardMapeo.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(20, 15, 20, 15)));
-        JLabel lblTm = new JLabel("MAPEO DE ASIENTOS", SwingConstants.CENTER);
-        lblTm.setForeground(EstiloUI.TEXTO_BLANCO); lblTm.setFont(EstiloUI.FUENTE_SUBTITULO);
-        cardMapeo.add(lblTm, BorderLayout.NORTH);
+        g.gridx = 0; g.gridy = 3; card.add(crearLabel("Capacidad:"), g);
+        g.gridx = 1; card.add(txtCapacidad, g);
 
+        g.gridx = 0; g.gridy = 4; card.add(crearLabel("Estado:"), g);
+        g.gridx = 1; card.add(comboEstado, g);
+
+        g.gridx = 0; g.gridy = 5; card.add(crearLabel("Notas:"), g);
+        g.gridx = 1; card.add(new JScrollPane(txtDescripcion), g);
+
+        g.gridx = 0; g.gridy = 6; g.gridwidth = 2; g.insets = new Insets(15, 5, 5, 5);
+        card.add(btnRegistrarAvion, g);
+
+        btnRegistrarAvion.addActionListener(e -> guardarAvionBaseDatos());
+
+        return card;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  COLUMNA 2: Diseñador de Mapa de Asientos
+    // ═══════════════════════════════════════════════════════
+
+    private JPanel construirColumnaMapeo() {
+        JPanel card = new JPanel(new BorderLayout(10, 10));
+        card.setBackground(EstiloUI.FONDO_TARJETA);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(20, 15, 20, 15)));
+
+        JLabel lblTitulo = new JLabel("MAPEO DE ASIENTOS", SwingConstants.CENTER);
+        lblTitulo.setForeground(EstiloUI.TEXTO_BLANCO);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+        card.add(lblTitulo, BorderLayout.NORTH);
+
+        // Mini preview de la cuadrícula (visual estática demostrativa)
         JPanel mockGrid = new JPanel(new GridLayout(7, 3, 6, 6));
         mockGrid.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         for (int i = 1; i <= 21; i++) {
-            JButton bSeat = new JButton("A" + i);
-            bSeat.setBackground(EstiloUI.ASIENTO_OCUPADO); bSeat.setForeground(EstiloUI.TEXTO_MUTED); bSeat.setBorder(EstiloUI.BORDE_COMPONENTE); bSeat.setEnabled(false);
+            JButton bSeat = new JButton(i % 4 == 0 ? "" : ("" + i));
+            bSeat.setBackground(i % 4 == 0 ? EstiloUI.FONDO_DARK_PRINCIPAL : EstiloUI.ASIENTO_OCUPADO);
+            bSeat.setForeground(EstiloUI.TEXTO_MUTED);
+            bSeat.setBorder(EstiloUI.BORDE_COMPONENTE);
+            bSeat.setEnabled(false);
             mockGrid.add(bSeat);
         }
-        cardMapeo.add(mockGrid, BorderLayout.CENTER);
-        JButton btnMc = new JButton("MAPEO COMPLETO");
-        btnMc.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
-        btnMc.setForeground(EstiloUI.TEXTO_BLANCO);
-        btnMc.setBorderPainted(false);
-        cardMapeo.add(btnMc, BorderLayout.SOUTH);
+        card.add(mockGrid, BorderLayout.CENTER);
 
-        // 🔥 LOGICA REACTIVA DE INTEGRACIÓN EN TIEMPO REAL:
-        btnMc.addActionListener(e -> {
-            String matriculaActual = txtMatricula.getText().trim();
-            String capacidadTexto = txtCapacidad.getText().trim();
+        JButton btnMapeoCompleto = new JButton("🗺  MAPEO COMPLETO");
+        btnMapeoCompleto.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
+        btnMapeoCompleto.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnMapeoCompleto.setBorderPainted(false);
+        PanelRadarView.aplicarHover(btnMapeoCompleto, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        card.add(btnMapeoCompleto, BorderLayout.SOUTH);
+
+        btnMapeoCompleto.addActionListener(e -> {
+            String matriculaActual   = txtMatricula.getText().trim();
+            String capacidadTexto    = txtCapacidad.getText().trim();
 
             if (matriculaActual.isEmpty() || capacidadTexto.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                        "Por favor, ingrese la Matrícula y Capacidad del avión en el formulario izquierdo para poder diseñar su mapa.",
+                        "Ingrese la Matrícula y Capacidad del avión antes de diseñar el mapa.",
                         "Datos Faltantes", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-
             int capacidad;
             try {
                 capacidad = Integer.parseInt(capacidadTexto);
                 if (capacidad <= 0) throw new NumberFormatException();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "La capacidad debe ser un número entero mayor a cero.", "Validación", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this, "La capacidad debe ser un número mayor a cero.", "Validación", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            // 🔥 VALIDACIÓN CRÍTICA: Verificar si el avión ya existe en SQL Server antes de abrir el diálogo
             AvionDAO avionDAO = new AvionDAO();
             if (!avionDAO.verificarMatriculaRegistrada(matriculaActual)) {
                 JOptionPane.showMessageDialog(this,
-                        "El avión con matrícula '" + matriculaActual + "' aún no ha sido registrado en la flota.\n" +
-                                "Por favor, haga clic primero en 'REGISTRAR EN FLOTA' antes de configurar sus asientos.",
+                        "Registre primero el avión en la flota antes de configurar sus asientos.",
                         "Aeronave No Encontrada", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            // Si pasa la validación, abre el diseñador de forma totalmente segura
-            DialogoMapeoCompleto diseñadorInteligente = new DialogoMapeoCompleto(
-                    (Frame) SwingUtilities.getWindowAncestor(this),
-                    matriculaActual,
-                    capacidad
-            );
-            diseñadorInteligente.setVisible(true);
+            new DialogoMapeoCompleto(
+                    (Frame) SwingUtilities.getWindowAncestor(this), matriculaActual, capacidad
+            ).setVisible(true);
         });
 
-        dashboard.add(cardMapeo);
-
-        // 👥 CARD 3: RECURSOS INTERNOS - CRUD DE PILOTOS CONECTADO A BASE DE DATOS
-        JPanel cardRecursos = new JPanel(new GridLayout(3, 1, 0, 15));
-        cardRecursos.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-
-        // Sub-Card Pilotos Interactiva
-        JPanel subPilotos = new JPanel(new BorderLayout(5, 5));
-        subPilotos.setBackground(EstiloUI.FONDO_TARJETA);
-        subPilotos.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(10, 10, 10, 10)));
-
-        JPanel cabeceraPilotos = new JPanel(new BorderLayout());
-        cabeceraPilotos.setBackground(EstiloUI.FONDO_TARJETA);
-        JLabel lblP = new JLabel("Pilotos Disponibles");
-        lblP.setForeground(EstiloUI.TEXTO_BLANCO); lblP.setFont(EstiloUI.FUENTE_SUBTITULO);
-        JButton btnGestionarPilotos = new JButton("⚙ Manage");
-        btnGestionarPilotos.setFont(new Font("SansSerif", Font.BOLD, 10)); btnGestionarPilotos.setBackground(EstiloUI.AZUL_ACCENT); btnGestionarPilotos.setForeground(EstiloUI.TEXTO_BLANCO); btnGestionarPilotos.setBorderPainted(false);
-        cabeceraPilotos.add(lblP, BorderLayout.WEST);
-        cabeceraPilotos.add(btnGestionarPilotos, BorderLayout.EAST);
-        subPilotos.add(cabeceraPilotos, BorderLayout.NORTH);
-
-        areaPilotosUI = new JTextArea();
-        areaPilotosUI.setBackground(EstiloUI.FONDO_TARJETA);
-        areaPilotosUI.setForeground(EstiloUI.TEXTO_MUTED); areaPilotosUI.setFont(EstiloUI.FUENTE_LABEL); areaPilotosUI.setEditable(false);
-        subPilotos.add(new JScrollPane(areaPilotosUI), BorderLayout.CENTER);
-        cardRecursos.add(subPilotos);
-
-        recargarListaPilotosUI(); // Carga los pilotos de la BD al iniciar
-
-        // Accion del administrador para lanzar el gestor CRUD de Pilotos
-        btnGestionarPilotos.addActionListener(e -> abrirDialogoCrudPilotos());
-
-        // Sub-Tarjeta B: Mantenimientos
-        JPanel subMantenimiento = new JPanel(new BorderLayout(5, 5));
-        subMantenimiento.setBackground(EstiloUI.FONDO_TARJETA);
-        subMantenimiento.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(10, 10, 10, 10)));
-        JLabel lblMant = new JLabel("Mantenimientos");
-        lblMant.setForeground(EstiloUI.TEXTO_BLANCO); lblMant.setFont(EstiloUI.FUENTE_SUBTITULO);
-        subMantenimiento.add(lblMant, BorderLayout.NORTH);
-
-        JPanel pBotones = new JPanel(new GridLayout(3, 1, 0, 5));
-        pBotones.setBackground(EstiloUI.FONDO_TARJETA);
-        String[] acciones = {"Registrar", "Editar", "Ver"};
-        for (String ac : acciones) {
-            JButton b = new JButton(ac);
-            b.setBackground(EstiloUI.GRIS_BOTON_PASIVO); b.setForeground(EstiloUI.TEXTO_BLANCO); b.setFont(EstiloUI.FUENTE_COMPONENTE); b.setBorderPainted(false);
-            pBotones.add(b);
-        }
-        subMantenimiento.add(pBotones, BorderLayout.CENTER);
-        cardRecursos.add(subMantenimiento);
-
-        // Sub-Tarjeta C: Bloque vacío de Figma
-        JPanel subAdicional = new JPanel(new GridBagLayout());
-        subAdicional.setBackground(EstiloUI.FONDO_TARJETA);
-        subAdicional.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(10, 10, 10, 10)));
-        JLabel lblPlusBig = new JLabel("+");
-        lblPlusBig.setForeground(EstiloUI.TEXTO_MUTED); lblPlusBig.setFont(new Font("SansSerif", Font.BOLD, 42));
-        subAdicional.add(lblPlusBig);
-        cardRecursos.add(subAdicional);
-
-        dashboard.add(cardRecursos);
-
-        btnRegistrarAvion.addActionListener(e -> guardarAvionBaseDatos());
-
-        return dashboard;
+        return card;
     }
 
-    private void recargarListaPilotosUI() {
+    // ═══════════════════════════════════════════════════════
+    //  COLUMNA 3: Gestión Interactiva de Pilotos
+    // ═══════════════════════════════════════════════════════
+
+    private JPanel construirColumnaPilotos() {
+        JPanel columna = new JPanel(new BorderLayout(0, 10));
+        columna.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+
+        // ── Encabezado ──
+        JPanel encabezado = new JPanel(new BorderLayout());
+        encabezado.setBackground(EstiloUI.FONDO_TARJETA);
+        encabezado.setBorder(BorderFactory.createCompoundBorder(
+                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(10, 15, 10, 15)));
+
+        JLabel lblTitulo = new JLabel("👥  CREW MANAGEMENT");
+        lblTitulo.setForeground(EstiloUI.TEXTO_BLANCO);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+
+        JButton btnNuevoPiloto = new JButton("✚  Nuevo Piloto");
+        btnNuevoPiloto.setBackground(EstiloUI.VERDE_NEON);
+        btnNuevoPiloto.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnNuevoPiloto.setFont(new Font("SansSerif", Font.BOLD, 11));
+        btnNuevoPiloto.setBorderPainted(false);
+        PanelRadarView.aplicarHover(btnNuevoPiloto, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
+
+        encabezado.add(lblTitulo, BorderLayout.WEST);
+        encabezado.add(btnNuevoPiloto, BorderLayout.EAST);
+        columna.add(encabezado, BorderLayout.NORTH);
+
+        // ── Panel scrollable de cards de pilotos ──
+        panelCardsContainer = new JPanel();
+        panelCardsContainer.setLayout(new BoxLayout(panelCardsContainer, BoxLayout.Y_AXIS));
+        panelCardsContainer.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+
+        JScrollPane scrollCards = new JScrollPane(panelCardsContainer);
+        scrollCards.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollCards.setBorder(BorderFactory.createEmptyBorder());
+        scrollCards.getVerticalScrollBar().setUnitIncrement(16);
+        columna.add(scrollCards, BorderLayout.CENTER);
+
+        // Carga inicial de cards
+        recargarCardsPilotos();
+
+        // Acción de registrar nuevo piloto
+        btnNuevoPiloto.addActionListener(e -> abrirDialogoRegistrarPiloto());
+
+        return columna;
+    }
+
+    /**
+     * Recarga el panel de cards destruyendo las anteriores y reconstruyendo
+     * una card por cada piloto obtenido de la base de datos.
+     */
+    private void recargarCardsPilotos() {
+        panelCardsContainer.removeAll();
+
         List<Piloto> pilotos = pilotoDAO.obtenerPilotos();
-        StringBuilder sb = new StringBuilder();
-        for (Piloto p : pilotos) {
-            sb.append(" • ").append(p.getNombre()).append(" (").append(p.getRango()).append(") - ").append(p.getEstado()).append("\n");
+
+        if (pilotos.isEmpty()) {
+            JLabel lblVacio = new JLabel("No hay pilotos registrados en el sistema.", SwingConstants.CENTER);
+            lblVacio.setForeground(EstiloUI.TEXTO_MUTED);
+            lblVacio.setFont(EstiloUI.FUENTE_LABEL);
+            lblVacio.setBorder(new EmptyBorder(40, 0, 0, 0));
+            panelCardsContainer.add(lblVacio);
+        } else {
+            for (Piloto piloto : pilotos) {
+                panelCardsContainer.add(construirCardPiloto(piloto));
+                panelCardsContainer.add(Box.createRigidArea(new Dimension(0, 8)));
+            }
         }
-        if(pilotos.isEmpty()) {
-            sb.append(" No hay pilotos en el sistema.");
-        }
-        areaPilotosUI.setText(sb.toString());
+
+        panelCardsContainer.revalidate();
+        panelCardsContainer.repaint();
     }
 
-    private void abrirDialogoCrudPilotos() {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Panel de Control de Pilotos", true);
-        dialog.getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
-        dialog.setSize(420, 350);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new GridBagLayout());
+    /**
+     * Construye una "Crew Card" interactiva para un piloto.
+     * Contiene badge de estado, nombre, rango y 3 botones de acción:
+     * Editar, Asignar Vuelo y Hospedaje.
+     */
+    private JPanel construirCardPiloto(Piloto piloto) {
+        JPanel card = new JPanel(new BorderLayout(10, 0));
+        card.setBackground(EstiloUI.FONDO_TARJETA);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(12, 15, 12, 15)));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        JTextField txtNom = new JTextField(12);
-        JTextField txtRan = new JTextField(12); // Ej: Comandante, Co-Piloto
-        JComboBox<String> cbEst = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "Licencia"});
-
-        txtNom.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); txtNom.setForeground(EstiloUI.TEXTO_BLANCO); txtNom.setBorder(EstiloUI.BORDE_COMPONENTE);
-        txtRan.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); txtRan.setForeground(EstiloUI.TEXTO_BLANCO); txtRan.setBorder(EstiloUI.BORDE_COMPONENTE);
-
+        // ── Sección izquierda: Badge de estado + info ──
+        JPanel infoPanel = new JPanel(new GridBagLayout());
+        infoPanel.setBackground(EstiloUI.FONDO_TARJETA);
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(6, 6, 6, 6); gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(1, 0, 1, 8);
 
-        gbc.gridx = 0; gbc.gridy = 0; dialog.add(new JLabel("Nombre Piloto:"), gbc); gbc.gridx = 1; dialog.add(txtNom, gbc);
-        gbc.gridx = 0; gbc.gridy = 1; dialog.add(new JLabel("Rango/Título:"), gbc); gbc.gridx = 1; dialog.add(txtRan, gbc);
-        gbc.gridx = 0; gbc.gridy = 2; dialog.add(new JLabel("Estado:"), gbc); gbc.gridx = 1; dialog.add(cbEst, gbc);
-
-        JButton btnAdd = new JButton("Agregar");
-        JButton btnDel = new JButton("Eliminar por Nombre");
-        btnAdd.setBackground(EstiloUI.VERDE_NEON); btnAdd.setForeground(EstiloUI.TEXTO_BLANCO); btnAdd.setBorderPainted(false);
-        btnDel.setBackground(EstiloUI.ROJO_ALERTA); btnDel.setForeground(EstiloUI.TEXTO_BLANCO); btnDel.setBorderPainted(false);
-
-        gbc.gridx = 0; gbc.gridy = 3; dialog.add(btnAdd, gbc);
-        gbc.gridx = 1; gbc.gridy = 3; dialog.add(btnDel, gbc);
-
-        for (Component comp : dialog.getContentPane().getComponents()) {
-            if (comp instanceof JLabel) comp.setForeground(EstiloUI.TEXTO_MUTED);
-        }
-
-        // Lógica de Alta de Piloto
-        btnAdd.addActionListener(e -> {
-            String nom = txtNom.getText().trim();
-            String ran = txtRan.getText().trim();
-            if(!nom.isEmpty() && !ran.isEmpty()){
-                if(pilotoDAO.insertarPiloto(new Piloto(0, nom, ran, (String)cbEst.getSelectedItem()))) {
-                    JOptionPane.showMessageDialog(dialog, "Piloto contratado y registrado.");
-                    recargarListaPilotosUI();
-                    dialog.dispose();
-                }
+        // Badge circular de estado (pintado con Graphics2D)
+        Color colorEstado = obtenerColorEstado(piloto.getEstado());
+        JPanel badge = new JPanel() {
+            @Override protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(colorEstado);
+                g2.fillOval(2, 2, getWidth() - 4, getHeight() - 4);
+                // Halo exterior semitransparente
+                g2.setColor(new Color(colorEstado.getRed(), colorEstado.getGreen(), colorEstado.getBlue(), 60));
+                g2.setStroke(new BasicStroke(2f));
+                g2.drawOval(1, 1, getWidth() - 2, getHeight() - 2);
             }
-        });
+        };
+        badge.setPreferredSize(new Dimension(14, 14));
+        badge.setBackground(EstiloUI.FONDO_TARJETA);
+        badge.setToolTipText(piloto.getEstado());
 
-        // Lógica de Baja de Piloto simplificada por nombre para no sobrecomplicar con IDs
-        btnDel.addActionListener(e -> {
-            String nom = txtNom.getText().trim();
-            List<Piloto> actual = pilotoDAO.obtenerPilotos();
-            for(Piloto p : actual) {
-                if(p.getNombre().equalsIgnoreCase(nom)) {
-                    if(pilotoDAO.eliminarPiloto(p.getIdPiloto())) {
-                        JOptionPane.showMessageDialog(dialog, "Registro de piloto eliminado.");
-                        recargarListaPilotosUI();
-                        dialog.dispose();
-                        return;
-                    }
-                }
+        JLabel lblNombre = new JLabel(piloto.getNombre());
+        lblNombre.setForeground(EstiloUI.TEXTO_BLANCO);
+        lblNombre.setFont(EstiloUI.FUENTE_SUBTITULO);
+
+        JLabel lblRango = new JLabel(piloto.getRango()  +  "  ·  " + piloto.getEstado());
+        lblRango.setForeground(colorEstado);
+        lblRango.setFont(new Font("SansSerif", Font.PLAIN, 11));
+
+        gbc.gridx = 0; gbc.gridy = 0; infoPanel.add(badge, gbc);
+        gbc.gridx = 1; gbc.gridy = 0; infoPanel.add(lblNombre, gbc);
+        gbc.gridx = 1; gbc.gridy = 1; infoPanel.add(lblRango, gbc);
+
+        card.add(infoPanel, BorderLayout.CENTER);
+
+        // ── Sección derecha: Botones de acción ──
+        JPanel accionesPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        accionesPanel.setBackground(EstiloUI.FONDO_TARJETA);
+
+        JButton btnEditar  = crearBotonAccion("✏", EstiloUI.GRIS_BOTON_PASIVO, "Editar datos del piloto");
+        JButton btnVuelo   = crearBotonAccion("✈", EstiloUI.AZUL_ACCENT,       "Asignar vuelo");
+        JButton btnHotel   = crearBotonAccion("🏨", new Color(120, 60, 180),    "Gestionar hospedaje");
+        JButton btnEliminar = crearBotonAccion("✕", EstiloUI.ROJO_ALERTA,      "Eliminar piloto");
+
+        // Hover effects
+        PanelRadarView.aplicarHover(btnEditar,   EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        PanelRadarView.aplicarHover(btnVuelo,    EstiloUI.AZUL_ACCENT,       EstiloUI.AZUL_ACCENT.brighter());
+        PanelRadarView.aplicarHover(btnHotel,    new Color(120, 60, 180),    new Color(140, 80, 200));
+        PanelRadarView.aplicarHover(btnEliminar, EstiloUI.ROJO_ALERTA,       EstiloUI.ROJO_ALERTA.brighter());
+
+        accionesPanel.add(btnEditar);
+        accionesPanel.add(btnVuelo);
+        accionesPanel.add(btnHotel);
+        accionesPanel.add(btnEliminar);
+        card.add(accionesPanel, BorderLayout.EAST);
+
+        // ── Listeners de acción ──
+        btnEditar.addActionListener(e   -> abrirDialogoEditarPiloto(piloto));
+        btnVuelo.addActionListener(e    -> abrirDialogoAsignarVuelo(piloto));
+        btnHotel.addActionListener(e    -> abrirDialogoHospedaje(piloto));
+        btnEliminar.addActionListener(e -> confirmarEliminarPiloto(piloto));
+
+        return card;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  DIÁLOGOS DE PILOTOS
+    // ═══════════════════════════════════════════════════════
+
+    /** Abre el diálogo para registrar un nuevo piloto en el sistema */
+    private void abrirDialogoRegistrarPiloto() {
+        JDialog dialog = crearDialogoBase("Registrar Nuevo Piloto", 420, 300);
+
+        JTextField txtNombre = crearCampoTexto();
+        JTextField txtRango  = crearCampoTexto();
+        JComboBox<String> cbEstado = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "Licencia", "Descanso"});
+        estilizarCombo(cbEstado);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(EstiloUI.FONDO_TARJETA);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0; form.add(crearLabel("Nombre completo:"), gbc);
+        gbc.gridx = 1; form.add(txtNombre, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; form.add(crearLabel("Rango / Título:"), gbc);
+        gbc.gridx = 1; form.add(txtRango, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; form.add(crearLabel("Estado inicial:"), gbc);
+        gbc.gridx = 1; form.add(cbEstado, gbc);
+
+        JButton btnGuardar = crearBotonPrincipal("✚  Registrar Piloto", EstiloUI.VERDE_NEON);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.insets = new Insets(15, 10, 8, 10);
+        form.add(btnGuardar, gbc);
+
+        dialog.add(form);
+
+        btnGuardar.addActionListener(e -> {
+            String nombre = txtNombre.getText().trim();
+            String rango  = txtRango.getText().trim();
+            if (nombre.isEmpty() || rango.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Nombre y rango son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            JOptionPane.showMessageDialog(dialog, "Piloto no encontrado.");
+            if (pilotoDAO.insertarPiloto(new Piloto(0, nombre, rango, (String) cbEstado.getSelectedItem()))) {
+                JOptionPane.showMessageDialog(dialog, "Piloto registrado correctamente en el sistema.");
+                dialog.dispose();
+                recargarCardsPilotos();
+            }
         });
 
         dialog.setVisible(true);
     }
 
-    private JTextField crearCampoTexto() {
-        JTextField f = new JTextField(10);
-        f.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); f.setForeground(EstiloUI.TEXTO_BLANCO); f.setCaretColor(EstiloUI.TEXTO_BLANCO); f.setBorder(EstiloUI.BORDE_COMPONENTE);
-        return f;
+    /** Abre el diálogo para editar los datos de un piloto existente */
+    private void abrirDialogoEditarPiloto(Piloto piloto) {
+        JDialog dialog = crearDialogoBase("Editar Piloto — " + piloto.getNombre(), 420, 300);
+
+        JTextField txtNombre = crearCampoTexto();
+        txtNombre.setText(piloto.getNombre());
+        JTextField txtRango = crearCampoTexto();
+        txtRango.setText(piloto.getRango());
+        JComboBox<String> cbEstado = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "Licencia", "Descanso"});
+        cbEstado.setSelectedItem(piloto.getEstado());
+        estilizarCombo(cbEstado);
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(EstiloUI.FONDO_TARJETA);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0; form.add(crearLabel("Nombre completo:"), gbc);
+        gbc.gridx = 1; form.add(txtNombre, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; form.add(crearLabel("Rango / Título:"), gbc);
+        gbc.gridx = 1; form.add(txtRango, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; form.add(crearLabel("Estado:"), gbc);
+        gbc.gridx = 1; form.add(cbEstado, gbc);
+
+        JButton btnGuardar = crearBotonPrincipal("✔  Guardar Cambios", EstiloUI.AZUL_ACCENT);
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        gbc.insets = new Insets(15, 10, 8, 10);
+        form.add(btnGuardar, gbc);
+
+        dialog.add(form);
+
+        btnGuardar.addActionListener(e -> {
+            String nombre = txtNombre.getText().trim();
+            String rango  = txtRango.getText().trim();
+            if (nombre.isEmpty() || rango.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Los campos no pueden estar vacíos.", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            piloto.setNombre(nombre);
+            piloto.setRango(rango);
+            piloto.setEstado((String) cbEstado.getSelectedItem());
+
+            if (pilotoDAO.actualizarPiloto(piloto)) {
+                JOptionPane.showMessageDialog(dialog, "Datos del piloto actualizados correctamente.");
+                dialog.dispose();
+                recargarCardsPilotos();
+            }
+        });
+
+        dialog.setVisible(true);
     }
 
-    private JLabel crearLabelMuted(String texto) {
-        JLabel l = new JLabel(texto);
-        l.setForeground(EstiloUI.TEXTO_MUTED); l.setFont(EstiloUI.FUENTE_LABEL);
-        return l;
+    /**
+     * Abre el diálogo interactivo de asignación de vuelo a un piloto.
+     * Verifica conflictos antes de guardar:
+     *   - Piloto no debe tener vuelos activos
+     *   - Avión seleccionado no debe tener vuelos activos
+     */
+    private void abrirDialogoAsignarVuelo(Piloto piloto) {
+        JDialog dialog = crearDialogoBase("✈  Asignar Vuelo — " + piloto.getNombre(), 560, 520);
+        dialog.setLayout(new BorderLayout(0, 10));
+
+        // ── Sección superior: formulario de asignación ──
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(EstiloUI.FONDO_TARJETA);
+        formPanel.setBorder(new EmptyBorder(15, 20, 10, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 8, 6, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Cargar aviones disponibles (sin vuelo activo)
+        AvionDAO avionDAO = new AvionDAO();
+        List<Avion> aviones = avionDAO.obtenerAvionesFlota();
+        JComboBox<String> cbAvion = new JComboBox<>();
+        for (Avion av : aviones) {
+            String etiqueta = av.getMatricula() + " — " + av.getModelo() + " (" + av.getEstado() + ")";
+            cbAvion.addItem(etiqueta);
+        }
+        estilizarCombo(cbAvion);
+
+        JTextField txtSalida  = crearCampoTexto(); txtSalida.setText("dd/MM/yyyy HH:mm");
+        JTextField txtRegreso = crearCampoTexto(); txtRegreso.setText("dd/MM/yyyy HH:mm");
+        txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
+        txtRegreso.setForeground(EstiloUI.TEXTO_MUTED);
+
+        // Limpiar placeholder al hacer foco
+        limpiarPlaceholder(txtSalida,  "dd/MM/yyyy HH:mm");
+        limpiarPlaceholder(txtRegreso, "dd/MM/yyyy HH:mm");
+
+        JComboBox<String> cbEstadoVuelo = new JComboBox<>(new String[]{"Programado", "En Vuelo"});
+        estilizarCombo(cbEstadoVuelo);
+
+        JLabel lblTitulo = new JLabel("Nueva asignación de vuelo para: " + piloto.getNombre());
+        lblTitulo.setForeground(Color.CYAN);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; formPanel.add(lblTitulo, gbc);
+        gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 1; formPanel.add(crearLabel("Aeronave:"), gbc);
+        gbc.gridx = 1; formPanel.add(cbAvion, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(crearLabel("Fecha Salida:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtSalida, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; formPanel.add(crearLabel("Fecha Regreso:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtRegreso, gbc);
+        gbc.gridx = 0; gbc.gridy = 4; formPanel.add(crearLabel("Estado vuelo:"), gbc);
+        gbc.gridx = 1; formPanel.add(cbEstadoVuelo, gbc);
+
+        JButton btnAsignar = crearBotonPrincipal("✈  Confirmar Asignación", EstiloUI.AZUL_ACCENT);
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        gbc.insets = new Insets(12, 8, 8, 8);
+        formPanel.add(btnAsignar, gbc);
+
+        // ── Sección inferior: historial de vuelos del piloto ──
+        JPanel historialPanel = new JPanel(new BorderLayout(0, 5));
+        historialPanel.setBackground(EstiloUI.FONDO_TARJETA);
+        historialPanel.setBorder(new EmptyBorder(0, 20, 15, 20));
+
+        JLabel lblHistorial = new JLabel("Historial de vuelos asignados:");
+        lblHistorial.setForeground(EstiloUI.TEXTO_MUTED);
+        lblHistorial.setFont(EstiloUI.FUENTE_LABEL);
+
+        // Tabla de historial de vuelos
+        String[] columnas = {"ID", "Aeronave", "Modelo", "Salida", "Regreso", "Estado"};
+        Object[][] filas = obtenerFilasVuelosPiloto(piloto.getIdPiloto());
+        JTable tablaVuelos = new JTable(filas, columnas) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tablaVuelos.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        tablaVuelos.setForeground(EstiloUI.TEXTO_BLANCO);
+        tablaVuelos.setGridColor(new Color(48, 54, 61));
+        tablaVuelos.getTableHeader().setBackground(EstiloUI.FONDO_TARJETA);
+        tablaVuelos.getTableHeader().setForeground(EstiloUI.TEXTO_MUTED);
+        tablaVuelos.setRowHeight(24);
+        tablaVuelos.setSelectionBackground(EstiloUI.AZUL_ACCENT);
+
+        JScrollPane scrollTabla = new JScrollPane(tablaVuelos);
+        scrollTabla.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollTabla.setBorder(EstiloUI.BORDE_COMPONENTE);
+        scrollTabla.setPreferredSize(new Dimension(0, 160));
+
+        historialPanel.add(lblHistorial, BorderLayout.NORTH);
+        historialPanel.add(scrollTabla,  BorderLayout.CENTER);
+
+        dialog.add(formPanel,    BorderLayout.NORTH);
+        dialog.add(historialPanel, BorderLayout.CENTER);
+
+        // ── Acción de asignación con validaciones de conflicto ──
+        btnAsignar.addActionListener(e -> {
+            if (cbAvion.getItemCount() == 0) {
+                JOptionPane.showMessageDialog(dialog, "No hay aeronaves registradas.", "Sin Aeronaves", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String matriculaSeleccionada = aviones.get(cbAvion.getSelectedIndex()).getMatricula();
+
+            // Verificar que el piloto no tenga vuelo activo
+            if (vueloDAO.pilotoTieneVueloActivo(piloto.getIdPiloto())) {
+                JOptionPane.showMessageDialog(dialog,
+                        piloto.getNombre() + " ya tiene un vuelo activo o programado.\nNo se puede asignar otro hasta que el actual se complete o cancele.",
+                        "Conflicto de Asignación", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Verificar que el avión no tenga vuelo activo
+            if (vueloDAO.avionTieneVueloActivo(matriculaSeleccionada)) {
+                JOptionPane.showMessageDialog(dialog,
+                        "La aeronave " + matriculaSeleccionada + " ya tiene un vuelo activo.\nSeleccione otra aeronave disponible.",
+                        "Aeronave No Disponible", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            LocalDateTime fechaSalida, fechaRegreso;
+            try {
+                fechaSalida  = LocalDateTime.parse(txtSalida.getText().trim(), FMT);
+                fechaRegreso = LocalDateTime.parse(txtRegreso.getText().trim(), FMT);
+                if (!fechaRegreso.isAfter(fechaSalida)) {
+                    JOptionPane.showMessageDialog(dialog, "La fecha de regreso debe ser posterior a la salida.", "Validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (DateTimeParseException ex) {
+                JOptionPane.showMessageDialog(dialog, "Formato de fecha inválido. Use dd/MM/yyyy HH:mm", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Vuelo vuelo = new Vuelo();
+            vuelo.setMatricula(matriculaSeleccionada);
+            vuelo.setIdPiloto(piloto.getIdPiloto());
+            vuelo.setFechaSalida(fechaSalida);
+            vuelo.setFechaRegreso(fechaRegreso);
+            vuelo.setEstado((String) cbEstadoVuelo.getSelectedItem());
+
+            if (vueloDAO.insertarVuelo(vuelo)) {
+                JOptionPane.showMessageDialog(dialog, "Vuelo asignado correctamente a " + piloto.getNombre() + ".");
+                dialog.dispose();
+                recargarCardsPilotos();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Error al guardar el vuelo. Verifique la conexión.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        dialog.setVisible(true);
     }
 
-    private void aplicarEstiloBotonMenu(JButton b, boolean activo) {
-        b.setPreferredSize(new Dimension(150, 42)); b.setFont(EstiloUI.FUENTE_SUBTITULO); b.setFocusPainted(false); b.setBorderPainted(false);
-        if (activo) {
-            b.setBackground(EstiloUI.AZUL_ACCENT);
-            b.setForeground(EstiloUI.TEXTO_BLANCO);
+    /**
+     * Abre el diálogo interactivo de gestión de hospedaje de un piloto.
+     * Permite registrar nuevo hospedaje y ver/eliminar hospedajes anteriores.
+     */
+    private void abrirDialogoHospedaje(Piloto piloto) {
+        JDialog dialog = crearDialogoBase("🏨  Hospedaje — " + piloto.getNombre(), 540, 480);
+        dialog.setLayout(new BorderLayout(0, 10));
+
+        // ── Formulario de nuevo hospedaje ──
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(EstiloUI.FONDO_TARJETA);
+        formPanel.setBorder(new EmptyBorder(15, 20, 10, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 8, 6, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel lblTitulo = new JLabel("Registrar hospedaje para: " + piloto.getNombre());
+        lblTitulo.setForeground(Color.CYAN);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+
+        JTextField txtHotel   = crearCampoTexto();
+        JTextField txtCiudad  = crearCampoTexto();
+        JTextField txtIngreso = crearCampoTexto(); txtIngreso.setText("dd/MM/yyyy HH:mm");
+        JTextField txtSalida  = crearCampoTexto(); txtSalida.setText("dd/MM/yyyy HH:mm");
+        txtIngreso.setForeground(EstiloUI.TEXTO_MUTED);
+        txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
+        limpiarPlaceholder(txtIngreso, "dd/MM/yyyy HH:mm");
+        limpiarPlaceholder(txtSalida,  "dd/MM/yyyy HH:mm");
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2; formPanel.add(lblTitulo, gbc);
+        gbc.gridwidth = 1;
+        gbc.gridx = 0; gbc.gridy = 1; formPanel.add(crearLabel("Hotel / Alojamiento:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtHotel, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; formPanel.add(crearLabel("Ciudad:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtCiudad, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; formPanel.add(crearLabel("Check-in:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtIngreso, gbc);
+        gbc.gridx = 0; gbc.gridy = 4; formPanel.add(crearLabel("Check-out:"), gbc);
+        gbc.gridx = 1; formPanel.add(txtSalida, gbc);
+
+        JButton btnRegistrar = crearBotonPrincipal("🏨  Registrar Hospedaje", new Color(120, 60, 180));
+        PanelRadarView.aplicarHover(btnRegistrar, new Color(120, 60, 180), new Color(140, 80, 200));
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        gbc.insets = new Insets(12, 8, 8, 8);
+        formPanel.add(btnRegistrar, gbc);
+
+        // ── Lista de hospedajes previos con opción de eliminar ──
+        JPanel listaPanel = new JPanel(new BorderLayout(0, 5));
+        listaPanel.setBackground(EstiloUI.FONDO_TARJETA);
+        listaPanel.setBorder(new EmptyBorder(0, 20, 15, 20));
+
+        JLabel lblLista = new JLabel("Hospedajes registrados:");
+        lblLista.setForeground(EstiloUI.TEXTO_MUTED);
+        lblLista.setFont(EstiloUI.FUENTE_LABEL);
+
+        // Panel interno de hospedajes (se reconstruye al registrar uno nuevo)
+        JPanel[] panelHospedajesRef = { construirListaHospedajes(piloto.getIdPiloto(), dialog) };
+        JScrollPane scrollHosp = new JScrollPane(panelHospedajesRef[0]);
+        scrollHosp.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollHosp.setBorder(EstiloUI.BORDE_COMPONENTE);
+
+        listaPanel.add(lblLista,    BorderLayout.NORTH);
+        listaPanel.add(scrollHosp,  BorderLayout.CENTER);
+
+        dialog.add(formPanel,    BorderLayout.NORTH);
+        dialog.add(listaPanel,   BorderLayout.CENTER);
+
+        // ── Acción de registro de hospedaje ──
+        btnRegistrar.addActionListener(e -> {
+            String hotel  = txtHotel.getText().trim();
+            String ciudad = txtCiudad.getText().trim();
+            if (hotel.isEmpty() || ciudad.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "Hotel y ciudad son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            LocalDateTime fechaIngreso, fechaSalida;
+            try {
+                fechaIngreso = LocalDateTime.parse(txtIngreso.getText().trim(), FMT);
+                fechaSalida  = LocalDateTime.parse(txtSalida.getText().trim(), FMT);
+                if (!fechaSalida.isAfter(fechaIngreso)) {
+                    JOptionPane.showMessageDialog(dialog, "El check-out debe ser posterior al check-in.", "Validación", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            } catch (DateTimeParseException ex) {
+                JOptionPane.showMessageDialog(dialog, "Formato de fecha inválido. Use dd/MM/yyyy HH:mm", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Hospedaje h = new Hospedaje(0, piloto.getIdPiloto(), hotel, ciudad, fechaIngreso, fechaSalida);
+            if (hospedajeDAO.insertarHospedaje(h)) {
+                JOptionPane.showMessageDialog(dialog, "Hospedaje registrado para " + piloto.getNombre() + ".");
+                // Reconstruye la lista sin cerrar el diálogo
+                JPanel nuevaLista = construirListaHospedajes(piloto.getIdPiloto(), dialog);
+                scrollHosp.setViewportView(nuevaLista);
+                txtHotel.setText(""); txtCiudad.setText("");
+                txtIngreso.setText("dd/MM/yyyy HH:mm"); txtIngreso.setForeground(EstiloUI.TEXTO_MUTED);
+                txtSalida.setText("dd/MM/yyyy HH:mm");  txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Error al registrar hospedaje.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Construye el panel con la lista de hospedajes de un piloto,
+     * cada uno con un botón de eliminar integrado.
+     */
+    private JPanel construirListaHospedajes(int idPiloto, JDialog dialogPadre) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+
+        List<Hospedaje> hospedajes = hospedajeDAO.obtenerHospedajesPorPiloto(idPiloto);
+
+        if (hospedajes.isEmpty()) {
+            JLabel lblVacio = new JLabel("  Sin hospedajes registrados.");
+            lblVacio.setForeground(EstiloUI.TEXTO_MUTED);
+            lblVacio.setFont(EstiloUI.FUENTE_LABEL);
+            lblVacio.setBorder(new EmptyBorder(10, 5, 10, 5));
+            panel.add(lblVacio);
         } else {
-            b.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
-            b.setForeground(EstiloUI.TEXTO_MUTED);
+            for (Hospedaje h : hospedajes) {
+                JPanel fila = new JPanel(new BorderLayout(10, 0));
+                fila.setBackground(EstiloUI.FONDO_TARJETA);
+                fila.setBorder(BorderFactory.createCompoundBorder(
+                        EstiloUI.BORDE_COMPONENTE, new EmptyBorder(8, 12, 8, 12)));
+                fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
+
+                String textoHosp = String.format("<html><b style='color:#f0f6fc'>%s</b> · %s<br>" +
+                                "<span style='color:#8b949e; font-size:10px'>Check-in: %s  →  Check-out: %s</span></html>",
+                        h.getHotel(), h.getCiudad(),
+                        h.getFechaIngreso() != null ? h.getFechaIngreso().format(FMT) : "—",
+                        h.getFechaSalida()  != null ? h.getFechaSalida().format(FMT)  : "—");
+
+                JLabel lblInfo = new JLabel(textoHosp);
+                fila.add(lblInfo, BorderLayout.CENTER);
+
+                JButton btnDel = crearBotonAccion("✕", EstiloUI.ROJO_ALERTA, "Eliminar hospedaje");
+                PanelRadarView.aplicarHover(btnDel, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
+                fila.add(btnDel, BorderLayout.EAST);
+
+                btnDel.addActionListener(e -> {
+                    int confirm = JOptionPane.showConfirmDialog(dialogPadre,
+                            "¿Eliminar el hospedaje en " + h.getHotel() + "?",
+                            "Confirmar", JOptionPane.YES_NO_OPTION);
+                    if (confirm == JOptionPane.YES_OPTION && hospedajeDAO.eliminarHospedaje(h.getIdHospedaje())) {
+                        panel.remove(fila);
+                        panel.revalidate();
+                        panel.repaint();
+                    }
+                });
+
+                panel.add(fila);
+                panel.add(Box.createRigidArea(new Dimension(0, 4)));
+            }
+        }
+        return panel;
+    }
+
+    /** Pide confirmación y elimina un piloto del sistema */
+    private void confirmarEliminarPiloto(Piloto piloto) {
+        int opcion = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar al piloto " + piloto.getNombre() + "?\n" +
+                        "Esta acción eliminará también sus vuelos y hospedajes asociados.",
+                "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (opcion == JOptionPane.YES_OPTION) {
+            if (pilotoDAO.eliminarPiloto(piloto.getIdPiloto())) {
+                recargarCardsPilotos();
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al eliminar el piloto.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
+    // ═══════════════════════════════════════════════════════
+    //  LÓGICA DE NEGOCIO — AVIONES
+    // ═══════════════════════════════════════════════════════
+
     private void guardarAvionBaseDatos() {
-        String matricula = txtMatricula.getText().trim();
-        String modelo = txtModelo.getText().trim();
+        String matricula      = txtMatricula.getText().trim();
+        String modelo         = txtModelo.getText().trim();
         String capacidadTexto = txtCapacidad.getText().trim();
-        String estado = (String) comboEstado.getSelectedItem();
+        String estado         = (String) comboEstado.getSelectedItem();
 
         if (matricula.isEmpty() || modelo.isEmpty() || capacidadTexto.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Complete todos los campos obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         int capacidad;
-        try { capacidad = Integer.parseInt(capacidadTexto); }
-        catch (NumberFormatException ex) {
+        try {
+            capacidad = Integer.parseInt(capacidadTexto);
+        } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "La capacidad debe ser un número.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         AvionDAO avionDAO = new AvionDAO();
         if (avionDAO.verificarMatriculaRegistrada(matricula)) {
-            JOptionPane.showMessageDialog(this, "Esta matrícula ya está registrada.", "Duplicado", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Esta matrícula ya está registrada en la flota.", "Duplicado", JOptionPane.WARNING_MESSAGE);
             return;
         }
-
         if (avionDAO.guardarAvion(new Avion(matricula, modelo, capacidad, estado))) {
-            JOptionPane.showMessageDialog(this, "Aeronave dada de alta exitosamente.");
+            JOptionPane.showMessageDialog(this, "Aeronave dada de alta exitosamente en la flota.");
             txtMatricula.setText(""); txtModelo.setText(""); txtCapacidad.setText(""); txtDescripcion.setText("");
-            panelRadarView.recargarDatosAviones(); // Fuerza al radar a dibujar el nuevo avión al instante
+            panelRadarView.recargarDatosAviones();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  HELPERS Y UTILIDADES
+    // ═══════════════════════════════════════════════════════
+
+    /** Obtiene los vuelos de un piloto como array de filas para JTable */
+    private Object[][] obtenerFilasVuelosPiloto(int idPiloto) {
+        List<Vuelo> vuelos = vueloDAO.obtenerVuelosPorPiloto(idPiloto);
+        Object[][] filas = new Object[vuelos.size()][6];
+        for (int i = 0; i < vuelos.size(); i++) {
+            Vuelo v = vuelos.get(i);
+            filas[i][0] = v.getIdVuelo();
+            filas[i][1] = v.getMatricula();
+            filas[i][2] = v.getModeloAvion() != null ? v.getModeloAvion() : "—";
+            filas[i][3] = v.getFechaSalida()  != null ? v.getFechaSalida().format(FMT)  : "—";
+            filas[i][4] = v.getFechaRegreso() != null ? v.getFechaRegreso().format(FMT) : "—";
+            filas[i][5] = v.getEstado();
+        }
+        return filas;
+    }
+
+    /** Devuelve el color asociado al estado de un piloto */
+    private Color obtenerColorEstado(String estado) {
+        return switch (estado) {
+            case "Disponible" -> EstiloUI.VERDE_NEON;
+            case "En Vuelo"   -> EstiloUI.AZUL_ACCENT;
+            case "Licencia"   -> new Color(250, 176, 5);
+            default           -> EstiloUI.TEXTO_MUTED;
+        };
+    }
+
+    /** Crea un diálogo base con estilo dark mode del sistema */
+    private JDialog crearDialogoBase(String titulo, int ancho, int alto) {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), titulo, true);
+        dialog.getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
+        dialog.setSize(ancho, alto);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new GridBagLayout());
+        return dialog;
+    }
+
+    /** Crea un botón de acción compacto (iconos en las cards de pilotos) */
+    private JButton crearBotonAccion(String icono, Color color, String tooltip) {
+        JButton btn = new JButton(icono);
+        btn.setBackground(color);
+        btn.setForeground(EstiloUI.TEXTO_BLANCO);
+        btn.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setPreferredSize(new Dimension(34, 34));
+        btn.setToolTipText(tooltip);
+        return btn;
+    }
+
+    /** Crea un botón principal de ancho completo */
+    private JButton crearBotonPrincipal(String texto, Color color) {
+        JButton btn = new JButton(texto);
+        btn.setBackground(color);
+        btn.setForeground(EstiloUI.TEXTO_BLANCO);
+        btn.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        PanelRadarView.aplicarHover(btn, color, color.brighter());
+        return btn;
+    }
+
+    /** Aplica placeholder: limpia el campo al ganar foco si el texto era el placeholder */
+    private void limpiarPlaceholder(JTextField campo, String placeholder) {
+        campo.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusGained(java.awt.event.FocusEvent e) {
+                if (campo.getText().equals(placeholder)) {
+                    campo.setText("");
+                    campo.setForeground(EstiloUI.TEXTO_BLANCO);
+                }
+            }
+            @Override public void focusLost(java.awt.event.FocusEvent e) {
+                if (campo.getText().isEmpty()) {
+                    campo.setText(placeholder);
+                    campo.setForeground(EstiloUI.TEXTO_MUTED);
+                }
+            }
+        });
+    }
+
+    private JTextField crearCampoTexto() {
+        JTextField f = new JTextField(14);
+        f.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        f.setForeground(EstiloUI.TEXTO_BLANCO);
+        f.setCaretColor(EstiloUI.TEXTO_BLANCO);
+        f.setBorder(EstiloUI.BORDE_COMPONENTE);
+        return f;
+    }
+
+    private JLabel crearLabel(String texto) {
+        JLabel l = new JLabel(texto);
+        l.setForeground(EstiloUI.TEXTO_MUTED);
+        l.setFont(EstiloUI.FUENTE_LABEL);
+        return l;
+    }
+
+    private void estilizarCombo(JComboBox<?> combo) {
+        combo.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        combo.setForeground(EstiloUI.TEXTO_BLANCO);
+        combo.setBorder(EstiloUI.BORDE_COMPONENTE);
+    }
+
+    private void aplicarEstiloBotonMenu(JButton b, boolean activo) {
+        b.setPreferredSize(new Dimension(150, 42));
+        b.setFont(EstiloUI.FUENTE_SUBTITULO);
+        b.setFocusPainted(false);
+        b.setBorderPainted(false);
+        b.setBackground(activo ? EstiloUI.AZUL_ACCENT : EstiloUI.GRIS_BOTON_PASIVO);
+        b.setForeground(activo ? EstiloUI.TEXTO_BLANCO : EstiloUI.TEXTO_MUTED);
     }
 }

@@ -1,10 +1,11 @@
 package skyq.view;
 
+import java.awt.BorderLayout;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.BorderLayout;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -35,7 +36,7 @@ public class VentanaPrincipal extends JFrame {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception ignored) {}
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException ignored) {}
 
         SwingUtilities.invokeLater(() -> new VentanaPrincipal().setVisible(true));
     }

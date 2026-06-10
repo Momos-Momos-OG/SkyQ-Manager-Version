@@ -10,15 +10,33 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Panel de radar operativo con:
+ * - Animación de barrido rotatoria usando javax.swing.Timer
+ * - Aviones dibujados con posiciones matemáticas estables (hash de matrícula)
+ * - Hitboxes clicables para editar cada aeronave
+ * - Hover effect sobre los íconos de avión
+ */
 public class PanelRadarView extends JPanel {
 
     private final AvionDAO avionDAO = new AvionDAO();
     private List<Avion> avionesFlota = new ArrayList<>();
     private final List<Rectangle> hitboxes = new ArrayList<>();
 
+    // Estado de la animación de barrido del radar
+    private double anguloBarrido = 0.0;
+    private int avionHover = -1; // Índice del avión sobre el que está el cursor
+
     public PanelRadarView() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         recargarDatosAviones();
+
+        // Timer de animación: refresca el barrido cada 30ms (~33 FPS)
+        Timer timerBarrido = new Timer(30, e -> {
+            anguloBarrido = (anguloBarrido + 1.5) % 360;
+            repaint();
+        });
+        timerBarrido.start();
 
         // Escucha de clics sobre los elementos del Radar
         addMouseListener(new MouseAdapter() {
@@ -30,6 +48,26 @@ public class PanelRadarView extends JPanel {
                         break;
                     }
                 }
+            }
+        });
+
+        // Escucha de movimiento para el efecto hover
+        addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                int anteriorHover = avionHover;
+                avionHover = -1;
+                for (int i = 0; i < hitboxes.size(); i++) {
+                    if (hitboxes.get(i).contains(e.getPoint())) {
+                        avionHover = i;
+                        break;
+                    }
+                }
+                // Solo repinta si cambió el estado de hover para no sobrecargar
+                if (avionHover != anteriorHover) repaint();
+                setCursor(avionHover >= 0
+                        ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                        : Cursor.getDefaultCursor());
             }
         });
     }
@@ -47,97 +85,213 @@ public class PanelRadarView extends JPanel {
 
         int cx = getWidth() / 2;
         int cy = getHeight() / 2;
+        int radioMaximo = Math.min(getWidth(), getHeight()) / 2 - 30;
 
-        // Anillos del radar de Figma
+        // ── Anillos del radar ──
         g2.setColor(new Color(48, 54, 61));
-        for (int radio = 100; radio <= 350; radio += 80) {
+        g2.setStroke(new BasicStroke(1f));
+        for (int radio = radioMaximo / 4; radio <= radioMaximo; radio += radioMaximo / 4) {
             g2.drawOval(cx - radio, cy - radio, radio * 2, radio * 2);
         }
+
+        // Líneas de cruz
         g2.drawLine(0, cy, getWidth(), cy);
         g2.drawLine(cx, 0, cx, getHeight());
 
-        hitboxes.clear();
-        g2.setFont(new Font("SansSerif", Font.BOLD, 16));
+        // ── Cono de barrido (sweep) con gradiente de opacidad ──
+        double anguloRad = Math.toRadians(anguloBarrido);
+        int abanico = 60; // Grados de amplitud del cono de luz
+        for (int i = abanico; i >= 0; i--) {
+            float alpha = (abanico - i) / (float) abanico * 0.35f;
+            g2.setColor(new Color(31, 111, 235, (int) (alpha * 255)));
+            double angulo = Math.toRadians(anguloBarrido - i);
+            int x2 = cx + (int) (radioMaximo * Math.cos(angulo));
+            int y2 = cy + (int) (radioMaximo * Math.sin(angulo));
+            g2.setStroke(new BasicStroke(2f));
+            g2.drawLine(cx, cy, x2, y2);
+        }
 
-        // Renderizar aviones de la Base de Datos con posiciones estables matemáticas
+        // Línea de barrido principal (más brillante)
+        g2.setColor(new Color(31, 111, 235, 200));
+        g2.setStroke(new BasicStroke(2f));
+        int xBarrido = cx + (int) (radioMaximo * Math.cos(anguloRad));
+        int yBarrido = cy + (int) (radioMaximo * Math.sin(anguloRad));
+        g2.drawLine(cx, cy, xBarrido, yBarrido);
+
+        // ── Renderizado de aviones ──
+        hitboxes.clear();
+        g2.setFont(new Font("SansSerif", Font.BOLD, 18));
+
         for (int i = 0; i < avionesFlota.size(); i++) {
             Avion av = avionesFlota.get(i);
 
-            // Generamos posiciones fijas distribuidas usando el hashCode único de la matrícula
+            // Posición estable basada en el hash único de la matrícula
             int semilla = Math.abs(av.getMatricula().hashCode());
-            int x = 150 + (semilla % Math.max(200, getWidth() - 300));
-            int y = 100 + ((semilla / 3) % Math.max(150, getHeight() - 200));
+            int margenX = Math.max(200, getWidth() - 300);
+            int margenY = Math.max(150, getHeight() - 200);
+            int x = 150 + (semilla % margenX);
+            int y = 100 + ((semilla / 3) % margenY);
 
-            // Guardamos el área de clic (hitbox) de 25x25 píxeles alrededor del avión
-            hitboxes.add(new Rectangle(x - 5, y - 15, 25, 25));
+            // Hitbox de 30x30 centrada en el ícono
+            Rectangle hitbox = new Rectangle(x - 8, y - 18, 30, 30);
+            hitboxes.add(hitbox);
 
-            // Dibujar el icono y la información del avión
-            g2.setColor(av.getEstado().equalsIgnoreCase("Disponible") ? EstiloUI.VERDE_NEON : EstiloUI.ROJO_ALERTA);
+            // Color según estado del avión
+            Color colorAvion;
+            switch (av.getEstado()) {
+                case "Disponible"       -> colorAvion = EstiloUI.VERDE_NEON;
+                case "En Vuelo"         -> colorAvion = EstiloUI.AZUL_ACCENT;
+                case "En mantenimiento" -> colorAvion = new Color(250, 176, 5);
+                default                 -> colorAvion = EstiloUI.ROJO_ALERTA;
+            }
+
+            // Efecto hover: halo de selección alrededor del avión
+            if (i == avionHover) {
+                g2.setColor(new Color(colorAvion.getRed(), colorAvion.getGreen(), colorAvion.getBlue(), 60));
+                g2.fillOval(x - 18, y - 28, 50, 50);
+                g2.setColor(colorAvion);
+                g2.setStroke(new BasicStroke(1.5f));
+                g2.drawOval(x - 18, y - 28, 50, 50);
+            }
+
+            // Ícono del avión con sombra suave
+            g2.setFont(new Font("SansSerif", Font.BOLD, 20));
+            g2.setColor(new Color(0, 0, 0, 80));
+            g2.drawString("✈", x + 1, y + 1); // Sombra
+            g2.setColor(colorAvion);
             g2.drawString("✈", x, y);
 
-            g2.setColor(EstiloUI.TEXTO_MUTED);
+            // Etiqueta de matrícula y estado bajo el ícono
             g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
-            g2.drawString(av.getMatricula() + " (" + av.getEstado() + ")", x - 20, y + 14);
-            g2.setFont(new Font("SansSerif", Font.BOLD, 16));
+            g2.setColor(EstiloUI.TEXTO_MUTED);
+            g2.drawString(av.getMatricula(), x - 15, y + 16);
+            g2.setColor(colorAvion);
+            g2.drawString("● " + av.getEstado(), x - 15, y + 27);
         }
 
+        // ── Título del panel ──
         g2.setColor(EstiloUI.TEXTO_BLANCO);
         g2.setFont(EstiloUI.FUENTE_SUBTITULO);
-        g2.drawString("PANTALLA DE RADAR OPERATIVO (Haga clic en un avión para editar)", 25, 30);
+        g2.drawString("RADAR OPERATIVO  —  Clic en aeronave para editar", 25, 28);
+
+        // Leyenda de colores en esquina inferior izquierda
+        dibujarLeyenda(g2);
     }
 
+    /** Dibuja la leyenda de estados de aviones en la esquina inferior izquierda */
+    private void dibujarLeyenda(Graphics2D g2) {
+        int xL = 20;
+        int yL = getHeight() - 90;
+        g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
+
+        String[][] leyenda = {
+                {"Disponible",       String.valueOf(EstiloUI.VERDE_NEON.getRGB())},
+                {"En Vuelo",         String.valueOf(EstiloUI.AZUL_ACCENT.getRGB())},
+                {"En mantenimiento", String.valueOf(new Color(250, 176, 5).getRGB())},
+                {"Fuera de servicio",String.valueOf(EstiloUI.ROJO_ALERTA.getRGB())}
+        };
+
+        Color[] colores = {EstiloUI.VERDE_NEON, EstiloUI.AZUL_ACCENT, new Color(250, 176, 5), EstiloUI.ROJO_ALERTA};
+        String[] estados = {"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"};
+
+        for (int i = 0; i < estados.length; i++) {
+            g2.setColor(colores[i]);
+            g2.fillOval(xL, yL + i * 16 - 7, 8, 8);
+            g2.setColor(EstiloUI.TEXTO_MUTED);
+            g2.drawString(estados[i], xL + 14, yL + i * 16);
+        }
+    }
+
+    /** Abre el diálogo flotante de edición de una aeronave seleccionada en el radar */
     private void abrirEditorAvionFlotante(Avion avion) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Información de Aeronave", true);
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Aeronave — " + avion.getMatricula(), true);
         dialog.getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
-        dialog.setSize(350, 300);
+        dialog.setSize(380, 320);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new GridBagLayout());
 
-        JTextField txtMod = new JTextField(avion.getModelo(), 12);
-        JTextField txtCap = new JTextField(String.valueOf(avion.getCapacidad()), 12);
-        JComboBox<String> cbEst = new JComboBox<>(new String[]{"Disponible", "En mantenimiento", "Fuera de servicio"});
+        JTextField txtMod = new JTextField(avion.getModelo(), 14);
+        JTextField txtCap = new JTextField(String.valueOf(avion.getCapacidad()), 14);
+        JComboBox<String> cbEst = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"});
         cbEst.setSelectedItem(avion.getEstado());
 
-        txtMod.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); txtMod.setForeground(EstiloUI.TEXTO_BLANCO); txtMod.setBorder(EstiloUI.BORDE_COMPONENTE);
-        txtCap.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); txtCap.setForeground(EstiloUI.TEXTO_BLANCO); txtCap.setBorder(EstiloUI.BORDE_COMPONENTE);
-        cbEst.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); cbEst.setForeground(EstiloUI.TEXTO_BLANCO);
+        estilizarCampo(txtMod);
+        estilizarCampo(txtCap);
+        cbEst.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        cbEst.setForeground(EstiloUI.TEXTO_BLANCO);
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8); gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(8, 10, 8, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Encabezado con matrícula resaltada
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        JLabel lblT = new JLabel("Matrícula: " + avion.getMatricula()); lblT.setForeground(Color.CYAN); dialog.add(lblT, gbc);
+        JLabel lblTitulo = new JLabel("✈  " + avion.getMatricula() + "  —  " + avion.getModelo());
+        lblTitulo.setForeground(Color.CYAN);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+        dialog.add(lblTitulo, gbc);
 
         gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 1; dialog.add(new JLabel("Modelo:"), gbc); gbc.gridx = 1; dialog.add(txtMod, gbc);
-        gbc.gridx = 0; gbc.gridy = 2; dialog.add(new JLabel("Capacidad:"), gbc); gbc.gridx = 1; dialog.add(txtCap, gbc);
-        gbc.gridx = 0; gbc.gridy = 3; dialog.add(new JLabel("Estado:"), gbc); gbc.gridx = 1; dialog.add(cbEst, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; dialog.add(crearLabelDialog("Modelo:"), gbc);
+        gbc.gridx = 1; dialog.add(txtMod, gbc);
+        gbc.gridx = 0; gbc.gridy = 2; dialog.add(crearLabelDialog("Capacidad:"), gbc);
+        gbc.gridx = 1; dialog.add(txtCap, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; dialog.add(crearLabelDialog("Estado:"), gbc);
+        gbc.gridx = 1; dialog.add(cbEst, gbc);
 
-        JButton btnAct = new JButton("Actualizar Datos");
-        btnAct.setBackground(EstiloUI.AZUL_ACCENT); btnAct.setForeground(EstiloUI.TEXTO_BLANCO); btnAct.setBorderPainted(false);
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; dialog.add(btnAct, gbc);
+        JButton btnActualizar = new JButton("✔  Actualizar Datos");
+        btnActualizar.setBackground(EstiloUI.AZUL_ACCENT);
+        btnActualizar.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnActualizar.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnActualizar.setBorderPainted(false);
+        aplicarHover(btnActualizar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.insets = new Insets(15, 10, 8, 10);
+        dialog.add(btnActualizar, gbc);
 
-        // Forzar estilos de etiquetas internas del diálogo
-        for (Component comp : dialog.getContentPane().getComponents()) {
-            if (comp instanceof JLabel && comp != lblT) comp.setForeground(EstiloUI.TEXTO_MUTED);
-        }
-
-        btnAct.addActionListener(e -> {
+        btnActualizar.addActionListener(e -> {
             try {
                 avion.setModelo(txtMod.getText().trim());
                 avion.setCapacidad(Integer.parseInt(txtCap.getText().trim()));
                 avion.setEstado((String) cbEst.getSelectedItem());
 
                 if (avionDAO.actualizarAvion(avion)) {
-                    JOptionPane.showMessageDialog(dialog, "Datos de aeronave actualizados en Docker.");
+                    JOptionPane.showMessageDialog(dialog, "Datos de aeronave actualizados correctamente.");
                     dialog.dispose();
                     recargarDatosAviones();
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Campos inválidos.", "Validación", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "La capacidad debe ser un número válido.", "Validación", JOptionPane.ERROR_MESSAGE);
             }
         });
 
         dialog.setVisible(true);
+    }
+
+    // ── Helpers de estilo ──
+
+    private void estilizarCampo(JTextField campo) {
+        campo.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        campo.setForeground(EstiloUI.TEXTO_BLANCO);
+        campo.setCaretColor(EstiloUI.TEXTO_BLANCO);
+        campo.setBorder(EstiloUI.BORDE_COMPONENTE);
+    }
+
+    private JLabel crearLabelDialog(String texto) {
+        JLabel l = new JLabel(texto);
+        l.setForeground(EstiloUI.TEXTO_MUTED);
+        l.setFont(EstiloUI.FUENTE_LABEL);
+        return l;
+    }
+
+    /**
+     * Aplica un efecto hover a un botón cambiando su color de fondo
+     * cuando el cursor entra y sale usando MouseAdapter.
+     */
+    public static void aplicarHover(JButton btn, Color colorNormal, Color colorHover) {
+        btn.addMouseListener(new MouseAdapter() {
+            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(colorHover); }
+            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(colorNormal); }
+        });
     }
 }

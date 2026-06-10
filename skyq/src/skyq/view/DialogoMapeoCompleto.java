@@ -1,11 +1,9 @@
 package skyq.view;
 
-import skyq.dao.ConfiguracionAsientosDAO;
+import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
+import skyq.dao.ConfiguracionAsientosDAO;
 
 public class DialogoMapeoCompleto extends JDialog {
 
@@ -61,9 +59,9 @@ public class DialogoMapeoCompleto extends JDialog {
         // Spinner para definir el ancho total de columnas (asientos + pasillos virtuales)
         spinnerColumnas = new JSpinner(new SpinnerNumberModel(7, 3, 15, 1));
         JComponent editor = spinnerColumnas.getEditor();
-        if (editor instanceof JSpinner.DefaultEditor) {
-            ((JSpinner.DefaultEditor) editor).getTextField().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-            ((JSpinner.DefaultEditor) editor).getTextField().setForeground(EstiloUI.TEXTO_BLANCO);
+        if (editor instanceof JSpinner.DefaultEditor defaultEditor) {
+            defaultEditor.getTextField().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+            defaultEditor.getTextField().setForeground(EstiloUI.TEXTO_BLANCO);
         }
         spinnerColumnas.setBorder(EstiloUI.BORDE_COMPONENTE);
 
