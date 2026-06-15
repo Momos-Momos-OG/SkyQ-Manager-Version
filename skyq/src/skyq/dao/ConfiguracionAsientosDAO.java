@@ -29,7 +29,7 @@ public class ConfiguracionAsientosDAO {
 
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -45,7 +45,7 @@ public class ConfiguracionAsientosDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }

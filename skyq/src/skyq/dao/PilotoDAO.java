@@ -17,7 +17,7 @@ public class PilotoDAO {
             while (rs.next()) {
                 lista.add(new Piloto(rs.getInt("idPiloto"), rs.getString("nombre"), rs.getString("rango"), rs.getString("estado")));
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) { skyq.logic.LoggerManager.getInstance().logError("Error SQL", e); }
         return lista;
     }
 

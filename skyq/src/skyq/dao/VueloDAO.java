@@ -31,7 +31,7 @@ public class VueloDAO {
             stmt.setString(5, vuelo.getEstado());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -63,7 +63,7 @@ public class VueloDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return lista;
     }
@@ -94,7 +94,7 @@ public class VueloDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return lista;
     }
@@ -123,7 +123,7 @@ public class VueloDAO {
                 lista.add(v);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return lista;
     }
@@ -143,7 +143,7 @@ public class VueloDAO {
             stmt.setInt(2, idVuelo);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -161,7 +161,7 @@ public class VueloDAO {
             stmt.setInt(1, idVuelo);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -182,7 +182,7 @@ public class VueloDAO {
                 if (rs.next()) return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }
@@ -203,7 +203,7 @@ public class VueloDAO {
                 if (rs.next()) return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }

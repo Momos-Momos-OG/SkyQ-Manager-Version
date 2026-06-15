@@ -1,18 +1,28 @@
 package skyq.view;
 
 import java.awt.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import skyq.dao.AuditoriaDAO;
 import skyq.dao.AvionDAO;
+import skyq.dao.ConfiguracionDAO;
 import skyq.dao.HospedajeDAO;
+import skyq.dao.MantenimientoDAO;
 import skyq.dao.PilotoDAO;
 import skyq.dao.VueloDAO;
+import skyq.logic.AutoCalculadorCabina;
+import skyq.logic.LoggerManager;
+import skyq.logic.SesionManager;
+import skyq.logic.ValidadorFormulario;
 import skyq.model.Avion;
 import skyq.model.Hospedaje;
+import skyq.model.Mantenimiento;
 import skyq.model.Piloto;
 import skyq.model.Vuelo;
 
@@ -47,6 +57,8 @@ public class PanelGerente extends JPanel {
     private final PilotoDAO pilotoDAO = new PilotoDAO();
     private final VueloDAO vueloDAO   = new VueloDAO();
     private final HospedajeDAO hospedajeDAO = new HospedajeDAO();
+    private final MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
+    private final AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
 
     // Formateador de fechas para los diálogos
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -71,10 +83,13 @@ public class PanelGerente extends JPanel {
 
         btnRadarView    = new JButton("✈  Radar");
         btnRegistroView = new JButton("⚙  Registro");
+        JButton btnAuditoria = new JButton("📊  Auditoría");
         aplicarEstiloBotonMenu(btnRadarView, true);
         aplicarEstiloBotonMenu(btnRegistroView, false);
+        aplicarEstiloBotonMenu(btnAuditoria, false);
         sidebar.add(btnRadarView);
         sidebar.add(btnRegistroView);
+        sidebar.add(btnAuditoria);
         add(sidebar, BorderLayout.WEST);
 
         // ── Contenedor dinámico ──
@@ -91,6 +106,7 @@ public class PanelGerente extends JPanel {
         btnRadarView.addActionListener(e -> {
             aplicarEstiloBotonMenu(btnRadarView, true);
             aplicarEstiloBotonMenu(btnRegistroView, false);
+            aplicarEstiloBotonMenu(btnAuditoria, false);
             panelRadarView.recargarDatosAviones();
             cardNavigator.show(mainDynamicContainer, "PANTALLA_RADAR");
         });
@@ -98,7 +114,15 @@ public class PanelGerente extends JPanel {
         btnRegistroView.addActionListener(e -> {
             aplicarEstiloBotonMenu(btnRadarView, false);
             aplicarEstiloBotonMenu(btnRegistroView, true);
+            aplicarEstiloBotonMenu(btnAuditoria, false);
             cardNavigator.show(mainDynamicContainer, "PANTALLA_DASHBOARD");
+        });
+
+        btnAuditoria.addActionListener(e -> {
+            aplicarEstiloBotonMenu(btnRadarView, false);
+            aplicarEstiloBotonMenu(btnRegistroView, false);
+            aplicarEstiloBotonMenu(btnAuditoria, true);
+            abrirDialogoAuditoria();
         });
     }
 
@@ -191,70 +215,55 @@ public class PanelGerente extends JPanel {
     }
 
     // ═══════════════════════════════════════════════════════
-    //  COLUMNA 2: Diseñador de Mapa de Asientos
+    //  COLUMNA 2: Previsualización de Asientos (Scrolleable)
     // ═══════════════════════════════════════════════════════
 
     private JPanel construirColumnaMapeo() {
         JPanel card = new JPanel(new BorderLayout(10, 10));
         card.setBackground(EstiloUI.FONDO_TARJETA);
         card.setBorder(BorderFactory.createCompoundBorder(
-                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(20, 15, 20, 15)));
+                EstiloUI.BORDE_COMPONENTE, new EmptyBorder(15, 15, 15, 15)));
 
-        JLabel lblTitulo = new JLabel("MAPEO DE ASIENTOS", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("📺  VISTA PREVIA DE CABINA", SwingConstants.CENTER);
         lblTitulo.setForeground(EstiloUI.TEXTO_BLANCO);
         lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
         card.add(lblTitulo, BorderLayout.NORTH);
 
-        // Mini preview de la cuadrícula (visual estática demostrativa)
-        JPanel mockGrid = new JPanel(new GridLayout(7, 3, 6, 6));
-        mockGrid.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        for (int i = 1; i <= 21; i++) {
-            JButton bSeat = new JButton(i % 4 == 0 ? "" : ("" + i));
-            bSeat.setBackground(i % 4 == 0 ? EstiloUI.FONDO_DARK_PRINCIPAL : EstiloUI.ASIENTO_OCUPADO);
-            bSeat.setForeground(EstiloUI.TEXTO_MUTED);
-            bSeat.setBorder(EstiloUI.BORDE_COMPONENTE);
-            bSeat.setEnabled(false);
-            mockGrid.add(bSeat);
-        }
-        card.add(mockGrid, BorderLayout.CENTER);
+        PanelCabinaPreview cabinaPreview = new PanelCabinaPreview("");
+        JScrollPane scrollCabina = new JScrollPane(cabinaPreview);
+        scrollCabina.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollCabina.setBorder(EstiloUI.BORDE_COMPONENTE);
+        scrollCabina.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollCabina.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        card.add(scrollCabina, BorderLayout.CENTER);
 
-        JButton btnMapeoCompleto = new JButton("🗺  MAPEO COMPLETO");
-        btnMapeoCompleto.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
-        btnMapeoCompleto.setForeground(EstiloUI.TEXTO_BLANCO);
-        btnMapeoCompleto.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnMapeoCompleto, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
-        card.add(btnMapeoCompleto, BorderLayout.SOUTH);
+        JButton btnEditar = new JButton("✏  EDITAR CONFIGURACIÓN");
+        btnEditar.setBackground(EstiloUI.AZUL_ACCENT);
+        btnEditar.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnEditar.setBorderPainted(false);
+        card.add(btnEditar, BorderLayout.SOUTH);
 
-        btnMapeoCompleto.addActionListener(e -> {
-            String matriculaActual   = txtMatricula.getText().trim();
-            String capacidadTexto    = txtCapacidad.getText().trim();
-
-            if (matriculaActual.isEmpty() || capacidadTexto.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        "Ingrese la Matrícula y Capacidad del avión antes de diseñar el mapa.",
-                        "Datos Faltantes", JOptionPane.WARNING_MESSAGE);
+        btnEditar.addActionListener(e -> {
+            String matriculaActual = txtMatricula.getText().trim();
+            if (matriculaActual.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Seleccione un avión del radar para editar su configuración.", "Sin Selección", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int capacidad;
-            try {
-                capacidad = Integer.parseInt(capacidadTexto);
-                if (capacidad <= 0) throw new NumberFormatException();
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "La capacidad debe ser un número mayor a cero.", "Validación", JOptionPane.WARNING_MESSAGE);
+            AvionDAO avDAO = new AvionDAO();
+            if (!avDAO.verificarMatriculaRegistrada(matriculaActual)) {
+                JOptionPane.showMessageDialog(this, "Registre primero el avión en la flota.", "Avión No Registrado", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            AvionDAO avionDAO = new AvionDAO();
-            if (!avionDAO.verificarMatriculaRegistrada(matriculaActual)) {
-                JOptionPane.showMessageDialog(this,
-                        "Registre primero el avión en la flota antes de configurar sus asientos.",
-                        "Aeronave No Encontrada", JOptionPane.ERROR_MESSAGE);
-                return;
+            int capacidad = Integer.parseInt(txtCapacidad.getText().trim());
+            ConfiguracionDAO confDAO = new ConfiguracionDAO();
+            String distribucion = confDAO.obtenerDistribucion(matriculaActual);
+            if (distribucion == null) {
+                distribucion = AutoCalculadorCabina.calcularDistribucion(capacidad);
+                confDAO.guardarConfiguracion(matriculaActual, distribucion);
             }
-
-            new DialogoMapeoCompleto(
-                    (Frame) SwingUtilities.getWindowAncestor(this), matriculaActual, capacidad
-            ).setVisible(true);
+            DialogoConfigurarCabina dialogo = new DialogoConfigurarCabina((Frame) SwingUtilities.getWindowAncestor(this), matriculaActual, distribucion);
+            dialogo.setVisible(true);
+            cabinaPreview.actualizarDistribucion(confDAO.obtenerDistribucion(matriculaActual));
         });
 
         return card;
@@ -858,26 +867,43 @@ public class PanelGerente extends JPanel {
         String capacidadTexto = txtCapacidad.getText().trim();
         String estado         = (String) comboEstado.getSelectedItem();
 
-        if (matricula.isEmpty() || modelo.isEmpty() || capacidadTexto.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Complete todos los campos obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (!ValidadorFormulario.esTextoValido(matricula)) {
+            JOptionPane.showMessageDialog(this, "Ingrese una matrícula válida.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        int capacidad;
-        try {
-            capacidad = Integer.parseInt(capacidadTexto);
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "La capacidad debe ser un número.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (!ValidadorFormulario.esMatriculaValida(matricula)) {
+            JOptionPane.showMessageDialog(this, "Formato de matrícula inválido (ej: HC-BXA).", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!ValidadorFormulario.esTextoValido(modelo)) {
+            JOptionPane.showMessageDialog(this, "Ingrese un modelo válido.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!ValidadorFormulario.esNumeroPositivo(capacidadTexto)) {
+            JOptionPane.showMessageDialog(this, "Capacidad debe ser un número mayor a 0.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
+        int capacidad = Integer.parseInt(capacidadTexto);
         AvionDAO avionDAO = new AvionDAO();
         if (avionDAO.verificarMatriculaRegistrada(matricula)) {
             JOptionPane.showMessageDialog(this, "Esta matrícula ya está registrada en la flota.", "Duplicado", JOptionPane.WARNING_MESSAGE);
             return;
         }
         if (avionDAO.guardarAvion(new Avion(matricula, modelo, capacidad, estado))) {
+            String distribucion = skyq.logic.AutoCalculadorCabina.calcularDistribucion(capacidad);
+            ConfiguracionDAO confDAO = new ConfiguracionDAO();
+            confDAO.guardarConfiguracion(matricula, distribucion);
+
+            LoggerManager.getInstance().logInfo("Avión registrado: " + matricula);
+            AuditoriaDAO audDAO = new AuditoriaDAO();
+            audDAO.registrarAccion(
+                SesionManager.getInstance().getUsuarioActual().getUsername(),
+                "REGISTRAR_AVION",
+                "Matrícula: " + matricula + ", Modelo: " + modelo + ", Capacidad: " + capacidad
+            );
+
             JOptionPane.showMessageDialog(this, "Aeronave dada de alta exitosamente en la flota.");
-            txtMatricula.setText(""); txtModelo.setText(""); txtCapacidad.setText(""); txtDescripcion.setText("");
             panelRadarView.recargarDatosAviones();
         }
     }
@@ -994,5 +1020,217 @@ public class PanelGerente extends JPanel {
         b.setBorderPainted(false);
         b.setBackground(activo ? EstiloUI.AZUL_ACCENT : EstiloUI.GRIS_BOTON_PASIVO);
         b.setForeground(activo ? EstiloUI.TEXTO_BLANCO : EstiloUI.TEXTO_MUTED);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  MANTENIMIENTO DE FLOTA
+    // ═══════════════════════════════════════════════════════
+
+    private void abrirDialogoRegistrarMantenimiento() {
+        JDialog dialog = crearDialogoBase("🔧  Registrar Mantenimiento", 500, 400);
+        dialog.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 12, 8, 12);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        AvionDAO avionDAO = new AvionDAO();
+        List<Avion> aviones = avionDAO.obtenerAvionesFlota();
+
+        if (aviones.isEmpty()) {
+            JLabel lblError = new JLabel("No hay aeronaves registradas.");
+            lblError.setForeground(EstiloUI.ROJO_ALERTA);
+            dialog.add(lblError);
+            dialog.setVisible(true);
+            return;
+        }
+
+        String[] matriculas = aviones.stream().map(Avion::getMatricula).toArray(String[]::new);
+        JComboBox<String> cbMatricula = new JComboBox<>(matriculas);
+        estilizarCombo(cbMatricula);
+
+        JSpinner spinFechaInicio = new JSpinner(new javax.swing.SpinnerDateModel());
+        JSpinner.DateEditor editorInicio = new JSpinner.DateEditor(spinFechaInicio, "dd/MM/yyyy");
+        spinFechaInicio.setEditor(editorInicio);
+        spinFechaInicio.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+
+        JSpinner spinFechaFin = new JSpinner(new javax.swing.SpinnerDateModel());
+        JSpinner.DateEditor editorFin = new JSpinner.DateEditor(spinFechaFin, "dd/MM/yyyy");
+        spinFechaFin.setEditor(editorFin);
+        spinFechaFin.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+
+        JTextArea txtDescripcionManto = new JTextArea(4, 30);
+        txtDescripcionManto.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        txtDescripcionManto.setForeground(EstiloUI.TEXTO_BLANCO);
+        txtDescripcionManto.setBorder(EstiloUI.BORDE_COMPONENTE);
+        txtDescripcionManto.setLineWrap(true);
+        txtDescripcionManto.setWrapStyleWord(true);
+
+        String[] estados = {"Programado", "En Curso", "Completado"};
+        JComboBox<String> cbEstado = new JComboBox<>(estados);
+        estilizarCombo(cbEstado);
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        dialog.add(crearLabel("Matrícula:"), gbc);
+        gbc.gridx = 1;
+        dialog.add(cbMatricula, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        dialog.add(crearLabel("Fecha Inicio:"), gbc);
+        gbc.gridx = 1;
+        dialog.add(spinFechaInicio, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        dialog.add(crearLabel("Fecha Fin:"), gbc);
+        gbc.gridx = 1;
+        dialog.add(spinFechaFin, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        dialog.add(crearLabel("Descripción:"), gbc);
+        gbc.gridx = 1;
+        dialog.add(new JScrollPane(txtDescripcionManto), gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4;
+        dialog.add(crearLabel("Estado:"), gbc);
+        gbc.gridx = 1;
+        dialog.add(cbEstado, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        JButton btnGuardar = crearBotonPrincipal("💾  GUARDAR", EstiloUI.VERDE_NEON);
+        dialog.add(btnGuardar, gbc);
+
+         btnGuardar.addActionListener(e -> {
+            String matricula = (String) cbMatricula.getSelectedItem();
+            java.util.Date date1 = (java.util.Date) spinFechaInicio.getValue();
+            LocalDate fechaInicio = new java.sql.Date(date1.getTime()).toLocalDate();
+            java.util.Date date2 = (java.util.Date) spinFechaFin.getValue();
+            LocalDate fechaFin = date2 != null ? new java.sql.Date(date2.getTime()).toLocalDate() : null;
+            String descripcion = txtDescripcionManto.getText().trim();
+            String estado = (String) cbEstado.getSelectedItem();
+
+            if (!ValidadorFormulario.esTextoValido(descripcion)) {
+                JOptionPane.showMessageDialog(dialog, "Ingrese una descripción.", "Validación", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            Mantenimiento m = new Mantenimiento(0, matricula, fechaInicio, fechaFin, descripcion, estado);
+            if (mantenimientoDAO.insertar(m)) {
+                JOptionPane.showMessageDialog(dialog, "Mantenimiento registrado correctamente.");
+                dialog.dispose();
+            } else {
+                JOptionPane.showMessageDialog(dialog, "Error al registrar mantenimiento.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        dialog.setVisible(true);
+    }
+
+    private void abrirDialogoVerMantenimiento() {
+        JDialog dialog = crearDialogoBase("📋  Historial de Mantenimientos", 700, 500);
+        dialog.setLayout(new BorderLayout(10, 10));
+
+        List<Mantenimiento> mantenimientos = mantenimientoDAO.obtenerTodos();
+
+        String[] columnas = {"ID", "Matrícula", "Inicio", "Fin", "Descripción", "Estado"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+
+        for (Mantenimiento m : mantenimientos) {
+            modelo.addRow(new Object[]{
+                    m.getIdMantenimiento(),
+                    m.getMatricula(),
+                    m.getFechaInicio(),
+                    m.getFechaFin() != null ? m.getFechaFin() : "—",
+                    m.getDescripcion(),
+                    m.getEstado()
+            });
+        }
+
+        JTable tabla = new JTable(modelo);
+        tabla.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        tabla.setForeground(EstiloUI.TEXTO_BLANCO);
+        tabla.setGridColor(new Color(48, 54, 61));
+        tabla.getTableHeader().setBackground(EstiloUI.FONDO_TARJETA);
+        tabla.getTableHeader().setForeground(EstiloUI.TEXTO_MUTED);
+        tabla.setRowHeight(24);
+        tabla.setSelectionBackground(EstiloUI.AZUL_ACCENT);
+
+        JScrollPane scrollTabla = new JScrollPane(tabla);
+        scrollTabla.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollTabla.setBorder(EstiloUI.BORDE_COMPONENTE);
+
+        dialog.add(scrollTabla, BorderLayout.CENTER);
+
+        JButton btnCerrar = crearBotonPrincipal("✕  CERRAR", EstiloUI.GRIS_BOTON_PASIVO);
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelBotones.setBackground(EstiloUI.FONDO_TARJETA);
+        panelBotones.add(btnCerrar);
+        btnCerrar.addActionListener(e -> dialog.dispose());
+        dialog.add(panelBotones, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  AUDITORÍA
+    // ═══════════════════════════════════════════════════════
+
+    private void abrirDialogoAuditoria() {
+        JDialog dialog = crearDialogoBase("📊  Auditoría del Sistema", 850, 550);
+        dialog.setLayout(new BorderLayout(10, 10));
+
+        List<Object[]> registros = auditoriaDAO.obtenerHistorial();
+
+        String[] columnas = {"ID", "Usuario", "Acción", "Detalle", "Fecha/Hora"};
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+
+        for (Object[] fila : registros) {
+            modelo.addRow(fila);
+        }
+
+        JTable tabla = new JTable(modelo);
+        tabla.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        tabla.setForeground(EstiloUI.TEXTO_BLANCO);
+        tabla.setGridColor(new Color(48, 54, 61));
+        tabla.getTableHeader().setBackground(EstiloUI.FONDO_TARJETA);
+        tabla.getTableHeader().setForeground(EstiloUI.TEXTO_MUTED);
+        tabla.setRowHeight(24);
+        tabla.setSelectionBackground(EstiloUI.AZUL_ACCENT);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(250);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(180);
+
+        JScrollPane scrollTabla = new JScrollPane(tabla);
+        scrollTabla.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        scrollTabla.setBorder(EstiloUI.BORDE_COMPONENTE);
+
+        JPanel panelEncabezado = new JPanel(new BorderLayout());
+        panelEncabezado.setBackground(EstiloUI.FONDO_TARJETA);
+        panelEncabezado.setBorder(new EmptyBorder(10, 15, 10, 15));
+        JLabel lblTitulo = new JLabel("📋  Historial de Operaciones del Sistema");
+        lblTitulo.setForeground(EstiloUI.TEXTO_BLANCO);
+        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
+        panelEncabezado.add(lblTitulo, BorderLayout.WEST);
+
+        JLabel lblTotal = new JLabel("Total: " + registros.size() + " registros");
+        lblTotal.setForeground(EstiloUI.TEXTO_MUTED);
+        lblTotal.setFont(EstiloUI.FUENTE_LABEL);
+        panelEncabezado.add(lblTotal, BorderLayout.EAST);
+
+        dialog.add(panelEncabezado, BorderLayout.NORTH);
+        dialog.add(scrollTabla, BorderLayout.CENTER);
+
+        JButton btnCerrar = crearBotonPrincipal("✕  CERRAR", EstiloUI.GRIS_BOTON_PASIVO);
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        panelBotones.setBackground(EstiloUI.FONDO_TARJETA);
+        panelBotones.add(btnCerrar);
+        btnCerrar.addActionListener(e -> dialog.dispose());
+        dialog.add(panelBotones, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 }

@@ -6,6 +6,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import skyq.logic.SesionManager;
+import skyq.model.Usuario;
 
 public class VentanaPrincipal extends JFrame {
 
@@ -20,15 +22,20 @@ public class VentanaPrincipal extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1300, 800);
         setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Inicia en Pantalla Completa automáticamente
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         tabbedPane = new JTabbedPane();
         tabbedPane.setBackground(EstiloUI.FONDO_TARJETA);
         tabbedPane.setForeground(EstiloUI.TEXTO_BLANCO);
 
-        // 🔥 ARQUITECTURA GANADORA: Solo dos núcleos macro de control global
-        tabbedPane.addTab("1. Centro de Comando (Gerente)", new PanelGerente());
-        tabbedPane.addTab("2. Gestión Operativa de Pasajeros", new PanelCheckIn());
+        Usuario usuarioActual = SesionManager.getInstance().getUsuarioActual();
+
+        if (usuarioActual != null && usuarioActual.isGerente()) {
+            tabbedPane.addTab("1. Centro de Comando (Gerente)", new PanelGerente());
+            tabbedPane.addTab("2. Gestión Operativa de Pasajeros", new PanelCheckIn());
+        } else if (usuarioActual != null && usuarioActual.isOperario()) {
+            tabbedPane.addTab("1. Gestión Operativa de Pasajeros", new PanelCheckIn());
+        }
 
         add(tabbedPane, BorderLayout.CENTER);
     }
@@ -38,6 +45,6 @@ public class VentanaPrincipal extends JFrame {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException ignored) {}
 
-        SwingUtilities.invokeLater(() -> new VentanaPrincipal().setVisible(true));
+        SwingUtilities.invokeLater(() -> new PantallaLogin().setVisible(true));
     }
 }

@@ -31,7 +31,7 @@ public class HospedajeDAO {
             stmt.setTimestamp(5, Timestamp.valueOf(hospedaje.getFechaSalida()));
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -68,7 +68,7 @@ public class HospedajeDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return lista;
     }
@@ -86,7 +86,7 @@ public class HospedajeDAO {
             stmt.setInt(1, idHospedaje);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }

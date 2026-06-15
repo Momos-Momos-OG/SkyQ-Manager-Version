@@ -19,7 +19,7 @@ public class ConexionBD {
             try {
                 connection.close();
             } catch (SQLException e) {
-                e.printStackTrace();
+                skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             }
         }
     }

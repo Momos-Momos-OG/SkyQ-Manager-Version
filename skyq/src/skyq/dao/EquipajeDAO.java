@@ -21,7 +21,7 @@ public class EquipajeDAO {
 
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }

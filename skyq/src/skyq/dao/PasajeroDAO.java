@@ -27,7 +27,7 @@ public class PasajeroDAO {
             statement.setString(5, pasajero.getMatricula() != null ? pasajero.getMatricula() : "");
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -51,7 +51,7 @@ public class PasajeroDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return -1;
     }
@@ -75,7 +75,7 @@ public class PasajeroDAO {
                 pasajeros.add(p);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return pasajeros;
     }
@@ -101,7 +101,7 @@ public class PasajeroDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return pasajeros;
     }
@@ -117,7 +117,7 @@ public class PasajeroDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }
@@ -134,7 +134,7 @@ public class PasajeroDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }

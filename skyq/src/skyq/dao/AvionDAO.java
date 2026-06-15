@@ -22,7 +22,7 @@ public class AvionDAO {
             statement.setString(4, avion.getEstado());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }
@@ -38,7 +38,7 @@ public class AvionDAO {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return false;
     }
@@ -58,7 +58,7 @@ public class AvionDAO {
                 ));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return lista;
     }
@@ -73,7 +73,7 @@ public class AvionDAO {
             statement.setString(4, avion.getMatricula());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
     }

@@ -1,14 +1,18 @@
 package skyq.view;
 
-import skyq.dao.AvionDAO;
-import skyq.model.Avion;
-
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
+import skyq.dao.AvionDAO;
+import skyq.dao.AuditoriaDAO;
+import skyq.dao.ConfiguracionDAO;
+import skyq.logic.AutoCalculadorCabina;
+import skyq.logic.LoggerManager;
+import skyq.logic.SesionManager;
+import skyq.model.Avion;
 
 /**
  * Panel de radar operativo con:
@@ -72,7 +76,7 @@ public class PanelRadarView extends JPanel {
         });
     }
 
-    public void recargarDatosAviones() {
+    public final void recargarDatosAviones() {
         avionesFlota = avionDAO.obtenerAvionesFlota();
         repaint();
     }
@@ -184,13 +188,6 @@ public class PanelRadarView extends JPanel {
         int yL = getHeight() - 90;
         g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
 
-        String[][] leyenda = {
-                {"Disponible",       String.valueOf(EstiloUI.VERDE_NEON.getRGB())},
-                {"En Vuelo",         String.valueOf(EstiloUI.AZUL_ACCENT.getRGB())},
-                {"En mantenimiento", String.valueOf(new Color(250, 176, 5).getRGB())},
-                {"Fuera de servicio",String.valueOf(EstiloUI.ROJO_ALERTA.getRGB())}
-        };
-
         Color[] colores = {EstiloUI.VERDE_NEON, EstiloUI.AZUL_ACCENT, new Color(250, 176, 5), EstiloUI.ROJO_ALERTA};
         String[] estados = {"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"};
 
@@ -204,68 +201,9 @@ public class PanelRadarView extends JPanel {
 
     /** Abre el diálogo flotante de edición de una aeronave seleccionada en el radar */
     private void abrirEditorAvionFlotante(Avion avion) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Aeronave — " + avion.getMatricula(), true);
-        dialog.getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
-        dialog.setSize(380, 320);
-        dialog.setLocationRelativeTo(this);
-        dialog.setLayout(new GridBagLayout());
-
-        JTextField txtMod = new JTextField(avion.getModelo(), 14);
-        JTextField txtCap = new JTextField(String.valueOf(avion.getCapacidad()), 14);
-        JComboBox<String> cbEst = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"});
-        cbEst.setSelectedItem(avion.getEstado());
-
-        estilizarCampo(txtMod);
-        estilizarCampo(txtCap);
-        cbEst.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        cbEst.setForeground(EstiloUI.TEXTO_BLANCO);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Encabezado con matrícula resaltada
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        JLabel lblTitulo = new JLabel("✈  " + avion.getMatricula() + "  —  " + avion.getModelo());
-        lblTitulo.setForeground(Color.CYAN);
-        lblTitulo.setFont(EstiloUI.FUENTE_SUBTITULO);
-        dialog.add(lblTitulo, gbc);
-
-        gbc.gridwidth = 1;
-        gbc.gridx = 0; gbc.gridy = 1; dialog.add(crearLabelDialog("Modelo:"), gbc);
-        gbc.gridx = 1; dialog.add(txtMod, gbc);
-        gbc.gridx = 0; gbc.gridy = 2; dialog.add(crearLabelDialog("Capacidad:"), gbc);
-        gbc.gridx = 1; dialog.add(txtCap, gbc);
-        gbc.gridx = 0; gbc.gridy = 3; dialog.add(crearLabelDialog("Estado:"), gbc);
-        gbc.gridx = 1; dialog.add(cbEst, gbc);
-
-        JButton btnActualizar = new JButton("✔  Actualizar Datos");
-        btnActualizar.setBackground(EstiloUI.AZUL_ACCENT);
-        btnActualizar.setForeground(EstiloUI.TEXTO_BLANCO);
-        btnActualizar.setFont(EstiloUI.FUENTE_COMPONENTE);
-        btnActualizar.setBorderPainted(false);
-        aplicarHover(btnActualizar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
-        gbc.insets = new Insets(15, 10, 8, 10);
-        dialog.add(btnActualizar, gbc);
-
-        btnActualizar.addActionListener(e -> {
-            try {
-                avion.setModelo(txtMod.getText().trim());
-                avion.setCapacidad(Integer.parseInt(txtCap.getText().trim()));
-                avion.setEstado((String) cbEst.getSelectedItem());
-
-                if (avionDAO.actualizarAvion(avion)) {
-                    JOptionPane.showMessageDialog(dialog, "Datos de aeronave actualizados correctamente.");
-                    dialog.dispose();
-                    recargarDatosAviones();
-                }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(dialog, "La capacidad debe ser un número válido.", "Validación", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        dialog.setVisible(true);
+        DialogoEditarAvion dialogo = new DialogoEditarAvion((Frame) SwingUtilities.getWindowAncestor(this), avion);
+        dialogo.setVisible(true);
+        recargarDatosAviones();
     }
 
     // ── Helpers de estilo ──
