@@ -37,7 +37,8 @@ public class PanelCabinaPreview extends JPanel {
 
         for (String clase : clases) {
             String[] partes = clase.split(":");
-            if (partes.length != 3) continue;
+            if (partes.length != 3)
+                continue;
 
             String nombreClase = partes[0];
             String distribucionAsientos = partes[1];
@@ -49,7 +50,8 @@ public class PanelCabinaPreview extends JPanel {
         }
     }
 
-    private void dibujarSeccionCabina(Graphics2D g2, String nombre, String distribucion, int filas, Color color, int x, int y) {
+    private void dibujarSeccionCabina(Graphics2D g2, String nombre, String distribucion, int filas, Color color, int x,
+            int y) {
         g2.setColor(EstiloUI.TEXTO_BLANCO);
         g2.setFont(EstiloUI.FUENTE_LABEL);
         g2.drawString(nombre, x, y);

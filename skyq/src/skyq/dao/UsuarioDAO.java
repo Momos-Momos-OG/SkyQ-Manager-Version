@@ -13,7 +13,7 @@ public class UsuarioDAO {
         String sql = "SELECT idUsuario, username, rol, estado FROM usuarios WHERE username = ? AND password_hash = ? AND estado = 'Activo'";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, username);
             statement.setString(2, password);
             try (ResultSet resultSet = statement.executeQuery()) {
@@ -22,8 +22,7 @@ public class UsuarioDAO {
                             resultSet.getInt("idUsuario"),
                             resultSet.getString("username"),
                             resultSet.getString("rol"),
-                            resultSet.getString("estado")
-                    );
+                            resultSet.getString("estado"));
                 }
             }
         } catch (SQLException e) {
@@ -32,4 +31,3 @@ public class UsuarioDAO {
         return null;
     }
 }
-

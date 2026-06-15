@@ -6,7 +6,8 @@ public class SesionManager {
     private static volatile SesionManager instancia;
     private Usuario usuarioActual;
 
-    private SesionManager() {}
+    private SesionManager() {
+    }
 
     public static SesionManager getInstance() {
         if (instancia == null) {

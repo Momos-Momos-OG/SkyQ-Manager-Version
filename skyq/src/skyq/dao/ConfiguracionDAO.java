@@ -13,7 +13,7 @@ public class ConfiguracionDAO {
         String sql = "SELECT distribucion_clases FROM configuracion_asientos WHERE matricula = ?";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -30,7 +30,7 @@ public class ConfiguracionDAO {
         String sql = "INSERT INTO configuracion_asientos (matricula, distribucion_clases) VALUES (?, ?)";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
             statement.setString(2, distribucion);
             return statement.executeUpdate() > 0;
@@ -44,7 +44,7 @@ public class ConfiguracionDAO {
         String sql = "UPDATE configuracion_asientos SET distribucion_clases = ? WHERE matricula = ?";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, distribucion);
             statement.setString(2, matricula);
             return statement.executeUpdate() > 0;
@@ -58,7 +58,7 @@ public class ConfiguracionDAO {
         String sql = "SELECT 1 FROM configuracion_asientos WHERE matricula = ?";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+                PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
             try (ResultSet resultSet = statement.executeQuery()) {
                 return resultSet.next();

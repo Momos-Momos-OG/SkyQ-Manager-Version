@@ -68,7 +68,8 @@ public class PanelRadarView extends JPanel {
                     }
                 }
                 // Solo repinta si cambió el estado de hover para no sobrecargar
-                if (avionHover != anteriorHover) repaint();
+                if (avionHover != anteriorHover)
+                    repaint();
                 setCursor(avionHover >= 0
                         ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                         : Cursor.getDefaultCursor());
@@ -143,10 +144,10 @@ public class PanelRadarView extends JPanel {
             // Color según estado del avión
             Color colorAvion;
             switch (av.getEstado()) {
-                case "Disponible"       -> colorAvion = EstiloUI.VERDE_NEON;
-                case "En Vuelo"         -> colorAvion = EstiloUI.AZUL_ACCENT;
+                case "Disponible" -> colorAvion = EstiloUI.VERDE_NEON;
+                case "En Vuelo" -> colorAvion = EstiloUI.AZUL_ACCENT;
                 case "En mantenimiento" -> colorAvion = new Color(250, 176, 5);
-                default                 -> colorAvion = EstiloUI.ROJO_ALERTA;
+                default -> colorAvion = EstiloUI.ROJO_ALERTA;
             }
 
             // Efecto hover: halo de selección alrededor del avión
@@ -188,8 +189,8 @@ public class PanelRadarView extends JPanel {
         int yL = getHeight() - 90;
         g2.setFont(new Font("SansSerif", Font.PLAIN, 10));
 
-        Color[] colores = {EstiloUI.VERDE_NEON, EstiloUI.AZUL_ACCENT, new Color(250, 176, 5), EstiloUI.ROJO_ALERTA};
-        String[] estados = {"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"};
+        Color[] colores = { EstiloUI.VERDE_NEON, EstiloUI.AZUL_ACCENT, new Color(250, 176, 5), EstiloUI.ROJO_ALERTA };
+        String[] estados = { "Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio" };
 
         for (int i = 0; i < estados.length; i++) {
             g2.setColor(colores[i]);
@@ -199,7 +200,9 @@ public class PanelRadarView extends JPanel {
         }
     }
 
-    /** Abre el diálogo flotante de edición de una aeronave seleccionada en el radar */
+    /**
+     * Abre el diálogo flotante de edición de una aeronave seleccionada en el radar
+     */
     private void abrirEditorAvionFlotante(Avion avion) {
         DialogoEditarAvion dialogo = new DialogoEditarAvion((Frame) SwingUtilities.getWindowAncestor(this), avion);
         dialogo.setVisible(true);
@@ -228,8 +231,15 @@ public class PanelRadarView extends JPanel {
      */
     public static void aplicarHover(JButton btn, Color colorNormal, Color colorHover) {
         btn.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btn.setBackground(colorHover); }
-            @Override public void mouseExited(MouseEvent e)  { btn.setBackground(colorNormal); }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(colorHover);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(colorNormal);
+            }
         });
     }
 }

@@ -92,51 +92,59 @@ public class DialogoEditarAvion extends JDialog {
         JLabel lblMatricula = new JLabel("Matrícula:");
         lblMatricula.setForeground(EstiloUI.TEXTO_MUTED);
         lblMatricula.setFont(EstiloUI.FUENTE_LABEL);
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         panel.add(lblMatricula, gbc);
 
         JLabel lblMatriculaVal = new JLabel(avion.getMatricula());
         lblMatriculaVal.setForeground(Color.CYAN);
         lblMatriculaVal.setFont(EstiloUI.FUENTE_SUBTITULO);
-        gbc.gridx = 1; gbc.gridy = 0;
+        gbc.gridx = 1;
+        gbc.gridy = 0;
         panel.add(lblMatriculaVal, gbc);
 
         // Modelo
         JLabel lblModelo = new JLabel("Modelo:");
         lblModelo.setForeground(EstiloUI.TEXTO_MUTED);
         lblModelo.setFont(EstiloUI.FUENTE_LABEL);
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         panel.add(lblModelo, gbc);
 
         txtModelo = new JTextField(avion.getModelo(), 15);
         estilizarCampo(txtModelo);
-        gbc.gridx = 1; gbc.gridy = 1;
+        gbc.gridx = 1;
+        gbc.gridy = 1;
         panel.add(txtModelo, gbc);
 
         // Capacidad
         JLabel lblCapacidad = new JLabel("Capacidad:");
         lblCapacidad.setForeground(EstiloUI.TEXTO_MUTED);
         lblCapacidad.setFont(EstiloUI.FUENTE_LABEL);
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         panel.add(lblCapacidad, gbc);
 
         txtCapacidad = new JTextField(String.valueOf(avion.getCapacidad()), 15);
         estilizarCampo(txtCapacidad);
-        gbc.gridx = 1; gbc.gridy = 2;
+        gbc.gridx = 1;
+        gbc.gridy = 2;
         panel.add(txtCapacidad, gbc);
 
         // Estado
         JLabel lblEstado = new JLabel("Estado:");
         lblEstado.setForeground(EstiloUI.TEXTO_MUTED);
         lblEstado.setFont(EstiloUI.FUENTE_LABEL);
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
         panel.add(lblEstado, gbc);
 
-        cbEstado = new JComboBox<>(new String[]{"Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio"});
+        cbEstado = new JComboBox<>(new String[] { "Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio" });
         cbEstado.setSelectedItem(avion.getEstado());
         cbEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         cbEstado.setForeground(EstiloUI.TEXTO_BLANCO);
-        gbc.gridx = 1; gbc.gridy = 3;
+        gbc.gridx = 1;
+        gbc.gridy = 3;
         panel.add(cbEstado, gbc);
 
         // Botón Editar Asientos
@@ -147,7 +155,9 @@ public class DialogoEditarAvion extends JDialog {
         btnEditarAsientos.setBorderPainted(false);
         PanelRadarView.aplicarHover(btnEditarAsientos, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.darker());
         btnEditarAsientos.addActionListener(e -> abrirEditorAsientos());
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 10, 8, 10);
         panel.add(btnEditarAsientos, gbc);
 
@@ -181,7 +191,7 @@ public class DialogoEditarAvion extends JDialog {
         panel.add(panelBotones, BorderLayout.NORTH);
 
         // Tabla de mantenimientos
-        String[] columnas = {"Fecha", "Estado", "Descripción"};
+        String[] columnas = { "Fecha", "Estado", "Descripción" };
         tablaManto = new JTable(new javax.swing.table.DefaultTableModel(columnas, 0));
         tablaManto.setBackground(EstiloUI.FONDO_TARJETA);
         tablaManto.setForeground(EstiloUI.TEXTO_BLANCO);
@@ -224,10 +234,9 @@ public class DialogoEditarAvion extends JDialog {
         PanelRadarView.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
         btnEditar.addActionListener(e -> {
             DialogoConfigurarCabina dialogo = new DialogoConfigurarCabina(
-                (Frame) SwingUtilities.getWindowAncestor(DialogoEditarAvion.this),
-                avion.getMatricula(),
-                distribucion
-            );
+                    (Frame) SwingUtilities.getWindowAncestor(DialogoEditarAvion.this),
+                    avion.getMatricula(),
+                    distribucion);
             dialogo.setVisible(true);
             cabinaPreview.actualizarDistribucion(confDAO.obtenerDistribucion(avion.getMatricula()));
         });
@@ -244,11 +253,11 @@ public class DialogoEditarAvion extends JDialog {
         modelo.setRowCount(0);
 
         for (Mantenimiento m : mantenimientos) {
-            modelo.addRow(new Object[]{
-                m.getFechaInicio(),
-                m.getEstado(),
-                m.getDescripcion(),
-                "—"
+            modelo.addRow(new Object[] {
+                    m.getFechaInicio(),
+                    m.getEstado(),
+                    m.getDescripcion(),
+                    "—"
             });
         }
     }
@@ -261,10 +270,9 @@ public class DialogoEditarAvion extends JDialog {
             confDAO.guardarConfiguracion(avion.getMatricula(), distribucion);
         }
         new DialogoConfigurarCabina(
-            (Frame) SwingUtilities.getWindowAncestor(this),
-            avion.getMatricula(),
-            distribucion
-        ).setVisible(true);
+                (Frame) SwingUtilities.getWindowAncestor(this),
+                avion.getMatricula(),
+                distribucion).setVisible(true);
     }
 
     private void abrirDialogoMantenimiento() {
@@ -278,7 +286,7 @@ public class DialogoEditarAvion extends JDialog {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JComboBox<String> cbEstado = new JComboBox<>(new String[]{"Programado", "En Progreso", "Completado"});
+        JComboBox<String> cbEstado = new JComboBox<>(new String[] { "Programado", "En Progreso", "Completado" });
         JTextArea txtDesc = new JTextArea(3, 20);
 
         cbEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -288,12 +296,14 @@ public class DialogoEditarAvion extends JDialog {
         txtDesc.setForeground(EstiloUI.TEXTO_BLANCO);
         txtDesc.setBorder(EstiloUI.BORDE_COMPONENTE);
 
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         dialogo.add(crearLabel("Estado:"), gbc);
         gbc.gridx = 1;
         dialogo.add(cbEstado, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         dialogo.add(crearLabel("Descripción:"), gbc);
         gbc.gridx = 1;
         dialogo.add(new JScrollPane(txtDesc), gbc);
@@ -302,7 +312,9 @@ public class DialogoEditarAvion extends JDialog {
         btnGuardar.setBackground(EstiloUI.AZUL_ACCENT);
         btnGuardar.setForeground(EstiloUI.TEXTO_BLANCO);
         btnGuardar.setBorderPainted(false);
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
         dialogo.add(btnGuardar, gbc);
 
         btnGuardar.addActionListener(e -> {
@@ -317,10 +329,9 @@ public class DialogoEditarAvion extends JDialog {
                 LoggerManager.getInstance().logInfo("Mantenimiento registrado: " + avion.getMatricula());
                 AuditoriaDAO audDAO = new AuditoriaDAO();
                 audDAO.registrarAccion(
-                    SesionManager.getInstance().getUsuarioActual().getUsername(),
-                    "REGISTRAR_MANTENIMIENTO",
-                    "Matrícula: " + avion.getMatricula() + ", Estado: " + cbEstado.getSelectedItem()
-                );
+                        SesionManager.getInstance().getUsuarioActual().getUsername(),
+                        "REGISTRAR_MANTENIMIENTO",
+                        "Matrícula: " + avion.getMatricula() + ", Estado: " + cbEstado.getSelectedItem());
                 JOptionPane.showMessageDialog(dialogo, "Mantenimiento guardado.");
                 cargarMantenimientos();
                 dialogo.dispose();
@@ -360,15 +371,15 @@ public class DialogoEditarAvion extends JDialog {
                 LoggerManager.getInstance().logInfo("Avión actualizado: " + avion.getMatricula());
                 AuditoriaDAO audDAO = new AuditoriaDAO();
                 audDAO.registrarAccion(
-                    SesionManager.getInstance().getUsuarioActual().getUsername(),
-                    "ACTUALIZAR_AVION",
-                    "Matrícula: " + avion.getMatricula() + ", Cambios: modelo, capacidad, estado"
-                );
+                        SesionManager.getInstance().getUsuarioActual().getUsername(),
+                        "ACTUALIZAR_AVION",
+                        "Matrícula: " + avion.getMatricula() + ", Cambios: modelo, capacidad, estado");
                 JOptionPane.showMessageDialog(this, "Aeronave actualizada correctamente.");
                 dispose();
             }
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Capacidad debe ser un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Capacidad debe ser un número válido.", "Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 }

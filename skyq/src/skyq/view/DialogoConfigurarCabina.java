@@ -46,7 +46,8 @@ public class DialogoConfigurarCabina extends JDialog {
                 JOptionPane.showMessageDialog(this, "Configuración guardada correctamente.");
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Error al guardar configuración.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error al guardar configuración.", "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
         btnCancelar.addActionListener(e -> dispose());
@@ -63,14 +64,16 @@ public class DialogoConfigurarCabina extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         panel.add(crearLabel("Distribución:"), gbc);
         gbc.gridx = 1;
         JComboBox<String> cbDistribucion = new JComboBox<>(obtenerDistribuciones(clase));
         estilizarCombo(cbDistribucion);
         panel.add(cbDistribucion, gbc);
 
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         panel.add(crearLabel("Filas:"), gbc);
         gbc.gridx = 1;
         JSpinner spinFilas = new JSpinner(new SpinnerNumberModel(5, 1, 50, 1));
@@ -82,10 +85,10 @@ public class DialogoConfigurarCabina extends JDialog {
 
     private String[] obtenerDistribuciones(String clase) {
         return switch (clase) {
-            case "VIP" -> new String[]{"2-2", "2-2-2", "1-2-1"};
-            case "EJEC" -> new String[]{"2-4-2", "2-3-2", "3-3-3"};
-            case "ECON" -> new String[]{"3-3", "3-4-3", "2-4-2"};
-            default -> new String[]{"3-3"};
+            case "VIP" -> new String[] { "2-2", "2-2-2", "1-2-1" };
+            case "EJEC" -> new String[] { "2-4-2", "2-3-2", "3-3-3" };
+            case "ECON" -> new String[] { "3-3", "3-4-3", "2-4-2" };
+            default -> new String[] { "3-3" };
         };
     }
 

@@ -11,7 +11,7 @@ public class AuditoriaDAO {
     public boolean registrarAccion(String username, String accion, String detalle) {
         String sql = "INSERT INTO auditoria (username, accion, detalle) VALUES (?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
             ps.setString(2, accion);
             ps.setString(3, detalle);
@@ -26,8 +26,8 @@ public class AuditoriaDAO {
         List<Object[]> filas = new ArrayList<>();
         String sql = "SELECT idAuditoria, username, accion, detalle, fecha_hora FROM auditoria ORDER BY fecha_hora DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Object[] fila = new Object[5];
                 fila[0] = rs.getInt("idAuditoria");
@@ -47,7 +47,7 @@ public class AuditoriaDAO {
         List<Object[]> filas = new ArrayList<>();
         String sql = "SELECT idAuditoria, username, accion, detalle, fecha_hora FROM auditoria WHERE username = ? ORDER BY fecha_hora DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+                PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
