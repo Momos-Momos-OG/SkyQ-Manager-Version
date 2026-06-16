@@ -16,7 +16,8 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class PanelCheckIn extends JPanel {
+public final class PanelCheckIn extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private JComboBox<String> comboVuelosFlota;
     private JPanel panelCentralWorkspace;
@@ -30,7 +31,7 @@ public class PanelCheckIn extends JPanel {
     private JPanel contenedorDinamicoCabina;
     private String asientoElegido = "";
     private JButton btnEnviarCheckIn;
-    private Pasajero pasajeroCargado = null;
+    private transient Pasajero pasajeroCargado = null;
     private MapaAsientosPanel planoRealTime = null;
 
     // Componentes de las tablas de Abordaje/Desembarque
@@ -38,9 +39,9 @@ public class PanelCheckIn extends JPanel {
     private JTable tablaFlujoOperaciones;
     private JLabel lblTituloSeccionCambiante;
 
-    private final AvionDAO avionDAO = new AvionDAO();
-    private final PasajeroDAO pasajeroDAO = new PasajeroDAO();
-    private final EquipajeDAO equipajeDAO = new EquipajeDAO();
+    private final transient AvionDAO avionDAO = new AvionDAO();
+    private final transient PasajeroDAO pasajeroDAO = new PasajeroDAO();
+    private final transient EquipajeDAO equipajeDAO = new EquipajeDAO();
 
     public PanelCheckIn() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -232,7 +233,9 @@ public class PanelCheckIn extends JPanel {
 
     private String obtenerMatriculaActiva() {
         String item = (String) comboVuelosFlota.getSelectedItem();
-        if (item == null || item.contains("Defecto")) return "HC-BXA";
+        if (item == null || item.contains("Defecto")) {
+            return "HC-BXA";
+        }
         return item.split(" - ")[0];
     }
 
@@ -259,10 +262,14 @@ public class PanelCheckIn extends JPanel {
 
         if (bloqueado) {
             planoRealTime.setSeleccionBloqueada(true);
-            if (btnEnviarCheckIn != null) btnEnviarCheckIn.setEnabled(false);
+            if (btnEnviarCheckIn != null) {
+                btnEnviarCheckIn.setEnabled(false);
+            }
         } else {
             planoRealTime.setSeleccionBloqueada(false);
-            if (btnEnviarCheckIn != null) btnEnviarCheckIn.setEnabled(pasajeroCargado != null);
+            if (btnEnviarCheckIn != null) {
+                btnEnviarCheckIn.setEnabled(pasajeroCargado != null);
+            }
         }
 
         contenedorDinamicoCabina.add(planoRealTime, BorderLayout.CENTER);
@@ -277,7 +284,6 @@ public class PanelCheckIn extends JPanel {
         }
 
         String pesoTexto = txtPesoEquipaje.getText().trim();
-        String matricula = obtenerMatriculaActiva();
 
         if (asientoElegido.isEmpty() || pesoTexto.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Seleccione un asiento en el mapa y complete el peso de la maleta.", "Validación", JOptionPane.WARNING_MESSAGE);
@@ -293,7 +299,11 @@ public class PanelCheckIn extends JPanel {
         }
 
         int prioridad = pasajeroCargado.getNivelPrioridad();
-        double pesoMaximo = (prioridad == 1) ? 32.0 : (prioridad == 2) ? 23.0 : 15.0;
+        double pesoMaximo = switch (prioridad) {
+            case 1 -> 32.0;
+            case 2 -> 23.0;
+            default -> 15.0;
+        };
         if (peso > pesoMaximo) {
             JOptionPane.showMessageDialog(this, "El equipaje excede el peso permitido (" + pesoMaximo + "kg) para prioridad " + prioridad, "Sobrepeso", JOptionPane.WARNING_MESSAGE);
             return;

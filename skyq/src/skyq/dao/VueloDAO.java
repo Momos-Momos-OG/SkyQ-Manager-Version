@@ -200,7 +200,9 @@ public class VueloDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idPiloto);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return rs.getInt(1) > 0;
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
             }
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
@@ -221,7 +223,9 @@ public class VueloDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, matricula);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return rs.getInt(1) > 0;
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
             }
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
@@ -245,10 +249,14 @@ public class VueloDAO {
         } catch (SQLException ignored) {}
 
         Timestamp tsSalida = rs.getTimestamp("fechaSalida");
-        if (tsSalida != null) v.setFechaSalida(tsSalida.toLocalDateTime());
+        if (tsSalida != null) {
+            v.setFechaSalida(tsSalida.toLocalDateTime());
+        }
 
         Timestamp tsRegreso = rs.getTimestamp("fechaRegreso");
-        if (tsRegreso != null) v.setFechaRegreso(tsRegreso.toLocalDateTime());
+        if (tsRegreso != null) {
+            v.setFechaRegreso(tsRegreso.toLocalDateTime());
+        }
 
         return v;
     }

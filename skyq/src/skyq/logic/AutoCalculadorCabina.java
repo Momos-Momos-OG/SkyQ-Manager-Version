@@ -45,7 +45,9 @@ public class AutoCalculadorCabina {
         String[] clases = distribucionClases.split("\\|");
         for (String clase : clases) {
             String[] partes = clase.split(":");
-            if (partes.length != 3) continue;
+            if (partes.length != 3) {
+                continue;
+            }
             String distribucionAsientos = partes[1];
             int filas = Integer.parseInt(partes[2]);
 

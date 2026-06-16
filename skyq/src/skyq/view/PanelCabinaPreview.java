@@ -4,7 +4,8 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-public class PanelCabinaPreview extends JPanel {
+public final class PanelCabinaPreview extends JPanel {
+    private static final long serialVersionUID = 1L;
     private String distribucion;
 
     public PanelCabinaPreview(String distribucion) {
@@ -38,7 +39,9 @@ public class PanelCabinaPreview extends JPanel {
 
         for (String clase : clases) {
             String[] partes = clase.split(":");
-            if (partes.length != 3) continue;
+            if (partes.length != 3) {
+                continue;
+            }
 
             String nombreClase = partes[0];
             String distribucionAsientos = partes[1];

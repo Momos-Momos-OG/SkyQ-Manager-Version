@@ -7,11 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import skyq.dao.AvionDAO;
-import skyq.dao.AuditoriaDAO;
-import skyq.dao.ConfiguracionDAO;
-import skyq.logic.AutoCalculadorCabina;
-import skyq.logic.LoggerManager;
-import skyq.logic.SesionManager;
 import skyq.model.Avion;
 
 /**
@@ -21,11 +16,12 @@ import skyq.model.Avion;
  * - Hitboxes clicables para editar cada aeronave
  * - Hover effect sobre los íconos de avión
  */
-public class PanelRadarView extends JPanel {
+public final class PanelRadarView extends JPanel {
+    private static final long serialVersionUID = 1L;
 
-    private final AvionDAO avionDAO = new AvionDAO();
-    private List<Avion> avionesFlota = new ArrayList<>();
-    private final List<Rectangle> hitboxes = new ArrayList<>();
+    private final transient AvionDAO avionDAO = new AvionDAO();
+    private transient List<Avion> avionesFlota = new ArrayList<>();
+    private final transient List<Rectangle> hitboxes = new ArrayList<>();
 
     // Estado de la animación de barrido del radar
     private double anguloBarrido = 0.0;
@@ -69,11 +65,14 @@ public class PanelRadarView extends JPanel {
                     }
                 }
                 // Solo repinta si cambió el estado de hover para no sobrecargar
-                if (avionHover != anteriorHover)
+                if (avionHover != anteriorHover) {
                     repaint();
-                setCursor(avionHover >= 0
-                        ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                        : Cursor.getDefaultCursor());
+                }
+                if (avionHover >= 0) {
+                    setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                } else {
+                    setCursor(Cursor.getDefaultCursor());
+                }
             }
         });
     }
@@ -219,20 +218,6 @@ public class PanelRadarView extends JPanel {
     }
 
     // ── Helpers de estilo ──
-
-    private void estilizarCampo(JTextField campo) {
-        campo.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        campo.setForeground(EstiloUI.TEXTO_BLANCO);
-        campo.setCaretColor(EstiloUI.TEXTO_BLANCO);
-        campo.setBorder(EstiloUI.BORDE_COMPONENTE);
-    }
-
-    private JLabel crearLabelDialog(String texto) {
-        JLabel l = new JLabel(texto);
-        l.setForeground(EstiloUI.TEXTO_MUTED);
-        l.setFont(EstiloUI.FUENTE_LABEL);
-        return l;
-    }
 
     /**
      * Aplica un efecto hover a un botón cambiando su color de fondo

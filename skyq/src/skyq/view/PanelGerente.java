@@ -1,7 +1,6 @@
 package skyq.view;
 
 import java.awt.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -13,7 +12,6 @@ import skyq.dao.AuditoriaDAO;
 import skyq.dao.AvionDAO;
 import skyq.dao.ConfiguracionDAO;
 import skyq.dao.HospedajeDAO;
-import skyq.dao.MantenimientoDAO;
 import skyq.dao.PilotoDAO;
 import skyq.dao.VueloDAO;
 import skyq.logic.AutoCalculadorCabina;
@@ -22,7 +20,6 @@ import skyq.logic.SesionManager;
 import skyq.logic.ValidadorFormulario;
 import skyq.model.Avion;
 import skyq.model.Hospedaje;
-import skyq.model.Mantenimiento;
 import skyq.model.Piloto;
 import skyq.model.Vuelo;
 
@@ -36,7 +33,8 @@ import skyq.model.Vuelo;
  * Col 2: Diseñador de mapa de asientos
  * Col 3: Gestión interactiva de pilotos (cards + diálogos de vuelo y hospedaje)
  */
-public class PanelGerente extends JPanel {
+public final class PanelGerente extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     // ── Navegación principal ──
     private CardLayout cardNavigator;
@@ -54,11 +52,10 @@ public class PanelGerente extends JPanel {
     private JPanel panelCardsContainer;
 
     // ── DAOs ──
-    private final PilotoDAO pilotoDAO = new PilotoDAO();
-    private final VueloDAO vueloDAO = new VueloDAO();
-    private final HospedajeDAO hospedajeDAO = new HospedajeDAO();
-    private final MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
-    private final AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
+    private final transient PilotoDAO pilotoDAO = new PilotoDAO();
+    private final transient VueloDAO vueloDAO = new VueloDAO();
+    private final transient HospedajeDAO hospedajeDAO = new HospedajeDAO();
+    private final transient AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
 
     // Formateador de fechas para los diálogos
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -922,11 +919,23 @@ public class PanelGerente extends JPanel {
                         EstiloUI.BORDE_COMPONENTE, new EmptyBorder(8, 12, 8, 12)));
                 fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
 
+                String fechaIngresoStr;
+                if (h.getFechaIngreso() != null) {
+                    fechaIngresoStr = h.getFechaIngreso().format(FMT);
+                } else {
+                    fechaIngresoStr = "—";
+                }
+                String fechaSalidaStr;
+                if (h.getFechaSalida() != null) {
+                    fechaSalidaStr = h.getFechaSalida().format(FMT);
+                } else {
+                    fechaSalidaStr = "—";
+                }
                 String textoHosp = String.format("<html><b style='color:#f0f6fc'>%s</b> · %s<br>" +
                         "<span style='color:#8b949e; font-size:10px'>Check-in: %s  →  Check-out: %s</span></html>",
                         h.getHotel(), h.getCiudad(),
-                        h.getFechaIngreso() != null ? h.getFechaIngreso().format(FMT) : "—",
-                        h.getFechaSalida() != null ? h.getFechaSalida().format(FMT) : "—");
+                        fechaIngresoStr,
+                        fechaSalidaStr);
 
                 JLabel lblInfo = new JLabel(textoHosp);
                 fila.add(lblInfo, BorderLayout.CENTER);
@@ -1037,9 +1046,29 @@ public class PanelGerente extends JPanel {
             Vuelo v = vuelos.get(i);
             filas[i][0] = v.getIdVuelo();
             filas[i][1] = v.getMatricula();
-            filas[i][2] = v.getModeloAvion() != null ? v.getModeloAvion() : "—";
-            filas[i][3] = v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "—";
-            filas[i][4] = v.getFechaRegreso() != null ? v.getFechaRegreso().format(FMT) : "—";
+            String modeloAvion;
+            if (v.getModeloAvion() != null) {
+                modeloAvion = v.getModeloAvion();
+            } else {
+                modeloAvion = "—";
+            }
+            filas[i][2] = modeloAvion;
+
+            String fechaSalidaStr;
+            if (v.getFechaSalida() != null) {
+                fechaSalidaStr = v.getFechaSalida().format(FMT);
+            } else {
+                fechaSalidaStr = "—";
+            }
+            filas[i][3] = fechaSalidaStr;
+
+            String fechaRegresoStr;
+            if (v.getFechaRegreso() != null) {
+                fechaRegresoStr = v.getFechaRegreso().format(FMT);
+            } else {
+                fechaRegresoStr = "—";
+            }
+            filas[i][4] = fechaRegresoStr;
             filas[i][5] = v.getEstado();
         }
         return filas;
@@ -1141,170 +1170,19 @@ public class PanelGerente extends JPanel {
         b.setFont(EstiloUI.FUENTE_SUBTITULO);
         b.setFocusPainted(false);
         b.setBorderPainted(false);
-        b.setBackground(activo ? EstiloUI.AZUL_ACCENT : EstiloUI.GRIS_BOTON_PASIVO);
-        b.setForeground(activo ? EstiloUI.TEXTO_BLANCO : EstiloUI.TEXTO_MUTED);
-    }
-
-    // ═══════════════════════════════════════════════════════
-    // MANTENIMIENTO DE FLOTA
-    // ═══════════════════════════════════════════════════════
-
-    private void abrirDialogoRegistrarMantenimiento() {
-        JDialog dialog = crearDialogoBase("🔧  Registrar Mantenimiento", 500, 400);
-        dialog.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 12, 8, 12);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        AvionDAO avionDAO = new AvionDAO();
-        List<Avion> aviones = avionDAO.obtenerAvionesFlota();
-
-        if (aviones.isEmpty()) {
-            JLabel lblError = new JLabel("No hay aeronaves registradas.");
-            lblError.setForeground(EstiloUI.ROJO_ALERTA);
-            dialog.add(lblError);
-            dialog.setVisible(true);
-            return;
+        if (activo) {
+            b.setBackground(EstiloUI.AZUL_ACCENT);
+        } else {
+            b.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
         }
-
-        String[] matriculas = aviones.stream().map(Avion::getMatricula).toArray(String[]::new);
-        JComboBox<String> cbMatricula = new JComboBox<>(matriculas);
-        estilizarCombo(cbMatricula);
-
-        JSpinner spinFechaInicio = new JSpinner(new javax.swing.SpinnerDateModel());
-        JSpinner.DateEditor editorInicio = new JSpinner.DateEditor(spinFechaInicio, "dd/MM/yyyy");
-        spinFechaInicio.setEditor(editorInicio);
-        spinFechaInicio.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-
-        JSpinner spinFechaFin = new JSpinner(new javax.swing.SpinnerDateModel());
-        JSpinner.DateEditor editorFin = new JSpinner.DateEditor(spinFechaFin, "dd/MM/yyyy");
-        spinFechaFin.setEditor(editorFin);
-        spinFechaFin.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-
-        JTextArea txtDescripcionManto = new JTextArea(4, 30);
-        txtDescripcionManto.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        txtDescripcionManto.setForeground(EstiloUI.TEXTO_BLANCO);
-        txtDescripcionManto.setBorder(EstiloUI.BORDE_COMPONENTE);
-        txtDescripcionManto.setLineWrap(true);
-        txtDescripcionManto.setWrapStyleWord(true);
-
-        String[] estados = { "Programado", "En Curso", "Completado" };
-        JComboBox<String> cbEstado = new JComboBox<>(estados);
-        estilizarCombo(cbEstado);
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        dialog.add(crearLabel("Matrícula:"), gbc);
-        gbc.gridx = 1;
-        dialog.add(cbMatricula, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        dialog.add(crearLabel("Fecha Inicio:"), gbc);
-        gbc.gridx = 1;
-        dialog.add(spinFechaInicio, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        dialog.add(crearLabel("Fecha Fin:"), gbc);
-        gbc.gridx = 1;
-        dialog.add(spinFechaFin, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        dialog.add(crearLabel("Descripción:"), gbc);
-        gbc.gridx = 1;
-        dialog.add(new JScrollPane(txtDescripcionManto), gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        dialog.add(crearLabel("Estado:"), gbc);
-        gbc.gridx = 1;
-        dialog.add(cbEstado, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        gbc.gridwidth = 2;
-        JButton btnGuardar = crearBotonPrincipal("💾  GUARDAR", EstiloUI.VERDE_NEON);
-        dialog.add(btnGuardar, gbc);
-
-        btnGuardar.addActionListener(e -> {
-            String matricula = (String) cbMatricula.getSelectedItem();
-            java.util.Date date1 = (java.util.Date) spinFechaInicio.getValue();
-            LocalDate fechaInicio = new java.sql.Date(date1.getTime()).toLocalDate();
-            java.util.Date date2 = (java.util.Date) spinFechaFin.getValue();
-            LocalDate fechaFin = date2 != null ? new java.sql.Date(date2.getTime()).toLocalDate() : null;
-            String descripcion = txtDescripcionManto.getText().trim();
-            String estado = (String) cbEstado.getSelectedItem();
-
-            if (!ValidadorFormulario.esTextoValido(descripcion)) {
-                JOptionPane.showMessageDialog(dialog, "Ingrese una descripción.", "Validación",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            Mantenimiento m = new Mantenimiento(0, matricula, fechaInicio, fechaFin, descripcion, estado);
-            if (mantenimientoDAO.insertar(m)) {
-                JOptionPane.showMessageDialog(dialog, "Mantenimiento registrado correctamente.");
-                dialog.dispose();
-            } else {
-                JOptionPane.showMessageDialog(dialog, "Error al registrar mantenimiento.", "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        dialog.setVisible(true);
-    }
-
-    private void abrirDialogoVerMantenimiento() {
-        JDialog dialog = crearDialogoBase("📋  Historial de Mantenimientos", 700, 500);
-        dialog.setLayout(new BorderLayout(10, 10));
-
-        List<Mantenimiento> mantenimientos = mantenimientoDAO.obtenerTodos();
-
-        String[] columnas = { "ID", "Matrícula", "Inicio", "Fin", "Descripción", "Estado" };
-        DefaultTableModel modelo = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-
-        for (Mantenimiento m : mantenimientos) {
-            modelo.addRow(new Object[] {
-                    m.getIdMantenimiento(),
-                    m.getMatricula(),
-                    m.getFechaInicio(),
-                    m.getFechaFin() != null ? m.getFechaFin() : "—",
-                    m.getDescripcion(),
-                    m.getEstado()
-            });
+        if (activo) {
+            b.setForeground(EstiloUI.TEXTO_BLANCO);
+        } else {
+            b.setForeground(EstiloUI.TEXTO_MUTED);
         }
-
-        JTable tabla = new JTable(modelo);
-        tabla.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        tabla.setForeground(EstiloUI.TEXTO_BLANCO);
-        tabla.setGridColor(new Color(48, 54, 61));
-        tabla.getTableHeader().setBackground(EstiloUI.FONDO_TARJETA);
-        tabla.getTableHeader().setForeground(EstiloUI.TEXTO_MUTED);
-        tabla.setRowHeight(24);
-        tabla.setSelectionBackground(EstiloUI.AZUL_ACCENT);
-
-        JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        scrollTabla.setBorder(EstiloUI.BORDE_COMPONENTE);
-
-        dialog.add(scrollTabla, BorderLayout.CENTER);
-
-        JButton btnCerrar = crearBotonPrincipal("✕  CERRAR", EstiloUI.GRIS_BOTON_PASIVO);
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        panelBotones.setBackground(EstiloUI.FONDO_TARJETA);
-        panelBotones.add(btnCerrar);
-        btnCerrar.addActionListener(e -> dialog.dispose());
-        dialog.add(panelBotones, BorderLayout.SOUTH);
-
-        dialog.setVisible(true);
     }
+
+
 
     // ═══════════════════════════════════════════════════════
     // AUDITORÍA

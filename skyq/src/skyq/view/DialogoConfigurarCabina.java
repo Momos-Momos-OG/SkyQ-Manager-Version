@@ -6,10 +6,11 @@ import javax.swing.border.EmptyBorder;
 import skyq.dao.ConfiguracionDAO;
 import skyq.logic.ValidadorFormulario;
 
-public class DialogoConfigurarCabina extends JDialog {
-    private String matricula;
-    private String distribucion;
-    private ConfiguracionDAO dao = new ConfiguracionDAO();
+public final class DialogoConfigurarCabina extends JDialog {
+    private static final long serialVersionUID = 1L;
+    private final String matricula;
+    private final String distribucion;
+    private final transient ConfiguracionDAO dao = new ConfiguracionDAO();
     private DialogoEditarAvion editorAvionParent;
 
     private JTextField txtVipDist, txtEjecDist, txtEconDist;
@@ -204,11 +205,15 @@ public class DialogoConfigurarCabina extends JDialog {
             sb.append("VIP:").append(finalVipDist).append(":").append(finalVipFilas);
         }
         if (finalEjecFilas > 0) {
-            if (sb.length() > 0) sb.append("|");
+            if (sb.length() > 0) {
+                sb.append("|");
+            }
             sb.append("EJEC:").append(finalEjecDist).append(":").append(finalEjecFilas);
         }
         if (finalEconFilas > 0) {
-            if (sb.length() > 0) sb.append("|");
+            if (sb.length() > 0) {
+                sb.append("|");
+            }
             sb.append("ECON:").append(finalEconDist).append(":").append(finalEconFilas);
         }
 

@@ -16,12 +16,14 @@ import skyq.model.Mantenimiento;
 import java.time.LocalDate;
 import java.util.List;
 
-public class DialogoEditarAvion extends JDialog {
-    private Avion avion;
+public final class DialogoEditarAvion extends JDialog {
+    private static final long serialVersionUID = 1L;
+    private transient Avion avion;
     private JTextField txtModelo, txtCapacidad;
     private JComboBox<String> cbEstado;
     private JTable tablaManto;
-    private JButton btnActualizar, btnEditarAsientos, btnRegistrarManto, btnVerManto;
+    private final JButton btnActualizar;
+    private JButton btnEditarAsientos, btnRegistrarManto, btnVerManto;
 
     public DialogoEditarAvion(Frame padre, Avion avion) {
         super(padre, "✈  Editar Aeronave: " + avion.getMatricula(), true);
@@ -236,10 +238,16 @@ public class DialogoEditarAvion extends JDialog {
         PanelRadarView.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
         btnEditar.addActionListener(e -> {
             String distActual = confDAO.obtenerDistribucion(avion.getMatricula());
+            String distSeleccionada;
+            if (distActual != null) {
+                distSeleccionada = distActual;
+            } else {
+                distSeleccionada = distribucion;
+            }
             DialogoConfigurarCabina dialogo = new DialogoConfigurarCabina(
                     DialogoEditarAvion.this,
                     avion.getMatricula(),
-                    distActual != null ? distActual : distribucion);
+                    distSeleccionada);
             dialogo.setVisible(true);
             cabinaPreview.actualizarDistribucion(confDAO.obtenerDistribucion(avion.getMatricula()));
         });
@@ -289,11 +297,11 @@ public class DialogoEditarAvion extends JDialog {
         gbc.insets = new Insets(8, 10, 8, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        JComboBox<String> cbEstado = new JComboBox<>(new String[] { "Programado", "En Progreso", "Completado" });
+        JComboBox<String> cbEstadoManto = new JComboBox<>(new String[] { "Programado", "En Progreso", "Completado" });
         JTextArea txtDesc = new JTextArea(3, 20);
 
-        cbEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        cbEstado.setForeground(EstiloUI.TEXTO_BLANCO);
+        cbEstadoManto.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        cbEstadoManto.setForeground(EstiloUI.TEXTO_BLANCO);
         estilizarCampo(new JTextField());
         txtDesc.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         txtDesc.setForeground(EstiloUI.TEXTO_BLANCO);
@@ -303,7 +311,7 @@ public class DialogoEditarAvion extends JDialog {
         gbc.gridy = 0;
         dialogo.add(crearLabel("Estado:"), gbc);
         gbc.gridx = 1;
-        dialogo.add(cbEstado, gbc);
+        dialogo.add(cbEstadoManto, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
@@ -311,7 +319,7 @@ public class DialogoEditarAvion extends JDialog {
         gbc.gridx = 1;
         dialogo.add(new JScrollPane(txtDesc), gbc);
 
-        JButton btnGuardar = new JButton("✔  Guardar");
+        final JButton btnGuardar = new JButton("✔  Guardar");
         btnGuardar.setBackground(EstiloUI.AZUL_ACCENT);
         btnGuardar.setForeground(EstiloUI.TEXTO_BLANCO);
         btnGuardar.setBorderPainted(false);
@@ -325,7 +333,7 @@ public class DialogoEditarAvion extends JDialog {
             m.setMatricula(avion.getMatricula());
             m.setFechaInicio(LocalDate.now());
             m.setDescripcion(txtDesc.getText());
-            m.setEstado((String) cbEstado.getSelectedItem());
+            m.setEstado((String) cbEstadoManto.getSelectedItem());
 
             MantenimientoDAO mDAO = new MantenimientoDAO();
             if (mDAO.insertar(m)) {
@@ -334,7 +342,7 @@ public class DialogoEditarAvion extends JDialog {
                 audDAO.registrarAccion(
                         SesionManager.getInstance().getUsuarioActual().getUsername(),
                         "REGISTRAR_MANTENIMIENTO",
-                        "Matrícula: " + avion.getMatricula() + ", Estado: " + cbEstado.getSelectedItem());
+                        "Matrícula: " + avion.getMatricula() + ", Estado: " + cbEstadoManto.getSelectedItem());
                 JOptionPane.showMessageDialog(dialogo, "Mantenimiento guardado.");
                 cargarMantenimientos();
                 dialogo.dispose();

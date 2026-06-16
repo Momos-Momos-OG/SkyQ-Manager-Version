@@ -15,18 +15,19 @@ import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class PanelVentas extends JPanel {
+public final class PanelVentas extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private JComboBox<String> comboVuelos;
     private JTextField txtNombrePasajero;
     private JComboBox<String> comboPrioridad;
     private JButton btnProcesarVenta;
 
-    private List<Vuelo> vuelosCargados;
-    private final VueloDAO vueloDAO = new VueloDAO();
-    private final MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
-    private final PasajeroDAO pasajeroDAO = new PasajeroDAO();
-    private final AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
+    private transient List<Vuelo> vuelosCargados;
+    private final transient VueloDAO vueloDAO = new VueloDAO();
+    private final transient MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
+    private final transient PasajeroDAO pasajeroDAO = new PasajeroDAO();
+    private final transient AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -116,11 +117,23 @@ public class PanelVentas extends JPanel {
         comboVuelos.removeAllItems();
         vuelosCargados = vueloDAO.obtenerTodosLosVuelos();
         for (Vuelo v : vuelosCargados) {
+            String modeloAvion;
+            if (v.getModeloAvion() != null) {
+                modeloAvion = v.getModeloAvion();
+            } else {
+                modeloAvion = "Avión";
+            }
+            String fechaSalidaStr;
+            if (v.getFechaSalida() != null) {
+                fechaSalidaStr = v.getFechaSalida().format(FMT);
+            } else {
+                fechaSalidaStr = "Sin fecha";
+            }
             String etiqueta = String.format("Vuelo #%d - %s (%s) - Salida: %s",
                     v.getIdVuelo(),
                     v.getMatricula(),
-                    v.getModeloAvion() != null ? v.getModeloAvion() : "Avión",
-                    v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "Sin fecha");
+                    modeloAvion,
+                    fechaSalidaStr);
             comboVuelos.addItem(etiqueta);
         }
         if (vuelosCargados.isEmpty()) {

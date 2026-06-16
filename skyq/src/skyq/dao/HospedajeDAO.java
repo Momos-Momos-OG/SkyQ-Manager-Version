@@ -59,10 +59,14 @@ public class HospedajeDAO {
                     h.setCiudad(rs.getString("ciudad"));
 
                     Timestamp tsIngreso = rs.getTimestamp("fechaIngreso");
-                    if (tsIngreso != null) h.setFechaIngreso(tsIngreso.toLocalDateTime());
+                    if (tsIngreso != null) {
+                        h.setFechaIngreso(tsIngreso.toLocalDateTime());
+                    }
 
                     Timestamp tsSalida = rs.getTimestamp("fechaSalida");
-                    if (tsSalida != null) h.setFechaSalida(tsSalida.toLocalDateTime());
+                    if (tsSalida != null) {
+                        h.setFechaSalida(tsSalida.toLocalDateTime());
+                    }
 
                     lista.add(h);
                 }

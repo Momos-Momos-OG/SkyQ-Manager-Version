@@ -10,13 +10,13 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.List;
 
-public class MapaAsientosPanel extends JPanel {
+public final class MapaAsientosPanel extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private final String matriculaAvion;
-    private final AsientoSeleccionadoListener listener;
-    private final PasajeroDAO pasajeroDAO;
+    private final transient AsientoSeleccionadoListener listener;
+    private final transient PasajeroDAO pasajeroDAO;
     private JToggleButton asientoSeleccionadoActual = null;
-    private boolean seleccionBloqueada = false;
 
     public interface AsientoSeleccionadoListener {
         void onAsientoSeleccionado(String codigoAsiento);
@@ -64,7 +64,9 @@ public class MapaAsientosPanel extends JPanel {
 
         for (String clase : clases) {
             String[] partes = clase.split(":");
-            if (partes.length != 3) continue;
+            if (partes.length != 3) {
+                continue;
+            }
 
             String nombreClase = partes[0];
             String distribucionAsientos = partes[1];
@@ -152,7 +154,6 @@ public class MapaAsientosPanel extends JPanel {
     }
 
     public void setSeleccionBloqueada(boolean bloqueada) {
-        this.seleccionBloqueada = bloqueada;
         deshabilitarBotonesRecursivo(this, !bloqueada);
     }
 
@@ -163,8 +164,8 @@ public class MapaAsientosPanel extends JPanel {
                 if (comp.getBackground() != EstiloUI.ASIENTO_OCUPADO) {
                     comp.setEnabled(enabled);
                 }
-            } else if (comp instanceof Container) {
-                deshabilitarBotonesRecursivo((Container) comp, enabled);
+            } else if (comp instanceof Container childContainer) {
+                deshabilitarBotonesRecursivo(childContainer, enabled);
             }
         }
     }

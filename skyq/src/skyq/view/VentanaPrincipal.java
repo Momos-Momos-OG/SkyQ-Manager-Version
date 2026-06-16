@@ -9,8 +9,9 @@ import javax.swing.UnsupportedLookAndFeelException;
 import skyq.logic.SesionManager;
 import skyq.model.Usuario;
 
-public class VentanaPrincipal extends JFrame {
+public final class VentanaPrincipal extends JFrame {
 
+    private static final long serialVersionUID = 1L;
     private JTabbedPane tabbedPane;
 
     public VentanaPrincipal() {

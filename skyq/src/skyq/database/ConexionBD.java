@@ -1,7 +1,5 @@
 package skyq.database;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -23,7 +21,9 @@ public class ConexionBD {
     private static boolean inicializado = false;
 
     private static synchronized void inicializarPool() {
-        if (inicializado) return;
+        if (inicializado) {
+            return;
+        }
         try {
             for (int i = 0; i < POOL_SIZE; i++) {
                 Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
@@ -88,18 +88,15 @@ public class ConexionBD {
         return (Connection) Proxy.newProxyInstance(
                 ConexionBD.class.getClassLoader(),
                 new Class<?>[]{Connection.class},
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        if ("close".equals(method.getName())) {
-                            releaseConnection(finalPhysicalConn);
-                            return null;
-                        }
-                        try {
-                            return method.invoke(finalPhysicalConn, args);
-                        } catch (java.lang.reflect.InvocationTargetException e) {
-                            throw e.getCause();
-                        }
+                (proxy, method, args) -> {
+                    if ("close".equals(method.getName())) {
+                        releaseConnection(finalPhysicalConn);
+                        return null;
+                    }
+                    try {
+                        return method.invoke(finalPhysicalConn, args);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
                     }
                 }
         );
@@ -125,7 +122,9 @@ public class ConexionBD {
     }
 
     public static synchronized void cerrarTodoFisicamente() {
-        if (!inicializado) return;
+        if (!inicializado) {
+            return;
+        }
         for (Connection conn : todasLasConexiones) {
             if (conn != null) {
                 try {

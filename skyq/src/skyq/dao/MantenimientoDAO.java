@@ -16,7 +16,11 @@ public class MantenimientoDAO {
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, m.getMatricula());
             ps.setDate(2, Date.valueOf(m.getFechaInicio()));
-            ps.setDate(3, m.getFechaFin() != null ? Date.valueOf(m.getFechaFin()) : null);
+            if (m.getFechaFin() != null) {
+                ps.setDate(3, Date.valueOf(m.getFechaFin()));
+            } else {
+                ps.setDate(3, null);
+            }
             ps.setString(4, m.getDescripcion());
             ps.setString(5, m.getEstado());
             return ps.executeUpdate() > 0;
@@ -35,11 +39,16 @@ public class MantenimientoDAO {
             ps.setString(1, matricula);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    LocalDate fechaFinVal = null;
+                    Date fechaFinSql = rs.getDate("fechaFin");
+                    if (fechaFinSql != null) {
+                        fechaFinVal = fechaFinSql.toLocalDate();
+                    }
                     Mantenimiento m = new Mantenimiento(
                             rs.getInt("idMantenimiento"),
                             rs.getString("matricula"),
                             rs.getDate("fechaInicio").toLocalDate(),
-                            rs.getDate("fechaFin") != null ? rs.getDate("fechaFin").toLocalDate() : null,
+                            fechaFinVal,
                             rs.getString("descripcion"),
                             rs.getString("estado"));
                     lista.add(m);
@@ -63,11 +72,16 @@ public class MantenimientoDAO {
                 PreparedStatement ps = conn.prepareStatement(sql);
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
+                LocalDate fechaFinVal = null;
+                Date fechaFinSql = rs.getDate("fechaFin");
+                if (fechaFinSql != null) {
+                    fechaFinVal = fechaFinSql.toLocalDate();
+                }
                 Mantenimiento m = new Mantenimiento(
                         rs.getInt("idMantenimiento"),
                         rs.getString("matricula"),
                         rs.getDate("fechaInicio").toLocalDate(),
-                        rs.getDate("fechaFin") != null ? rs.getDate("fechaFin").toLocalDate() : null,
+                        fechaFinVal,
                         rs.getString("descripcion"),
                         rs.getString("estado")
                     );

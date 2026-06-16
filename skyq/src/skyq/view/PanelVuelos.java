@@ -19,30 +19,30 @@ import java.awt.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.List;
 
-public class PanelVuelos extends JPanel {
+public final class PanelVuelos extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private JTextField txtOrigen, txtDestino, txtSalida, txtLlegada;
     private JComboBox<String> comboAvion, comboPiloto, comboEstado;
     private JTable tablaVuelos;
     private DefaultTableModel modeloTabla;
 
-    private List<Avion> avionesFlota;
-    private List<Piloto> pilotosFlota;
-    private List<Vuelo> vuelosProgramados;
+    private transient List<Avion> avionesFlota;
+    private transient List<Piloto> pilotosFlota;
+    private transient List<Vuelo> vuelosProgramados;
 
-    private final VueloDAO vueloDAO = new VueloDAO();
-    private final AvionDAO avionDAO = new AvionDAO();
-    private final PilotoDAO pilotoDAO = new PilotoDAO();
-    private final MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
-    private final AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
+    private final transient VueloDAO vueloDAO = new VueloDAO();
+    private final transient AvionDAO avionDAO = new AvionDAO();
+    private final transient PilotoDAO pilotoDAO = new PilotoDAO();
+    private final transient MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
+    private final transient AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final String DATE_PLACEHOLDER = "dd/MM/yyyy HH:mm";
 
-    private Vuelo vueloSeleccionado = null;
+    private transient Vuelo vueloSeleccionado = null;
 
     public PanelVuelos() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -244,14 +244,44 @@ public class PanelVuelos extends JPanel {
         vuelosProgramados = vueloDAO.obtenerTodosLosVuelos();
 
         for (Vuelo v : vuelosProgramados) {
+            String origenVal;
+            if (v.getOrigen() != null) {
+                origenVal = v.getOrigen();
+            } else {
+                origenVal = "—";
+            }
+            String destinoVal;
+            if (v.getDestino() != null) {
+                destinoVal = v.getDestino();
+            } else {
+                destinoVal = "—";
+            }
+            String pilotoVal;
+            if (v.getNombrePiloto() != null) {
+                pilotoVal = v.getNombrePiloto();
+            } else {
+                pilotoVal = "ID: " + v.getIdPiloto();
+            }
+            String salidaVal;
+            if (v.getFechaSalida() != null) {
+                salidaVal = v.getFechaSalida().format(FMT);
+            } else {
+                salidaVal = "—";
+            }
+            String regresoVal;
+            if (v.getFechaRegreso() != null) {
+                regresoVal = v.getFechaRegreso().format(FMT);
+            } else {
+                regresoVal = "—";
+            }
             modeloTabla.addRow(new Object[]{
                     v.getIdVuelo(),
-                    v.getOrigen() != null ? v.getOrigen() : "—",
-                    v.getDestino() != null ? v.getDestino() : "—",
+                    origenVal,
+                    destinoVal,
                     v.getMatricula(),
-                    v.getNombrePiloto() != null ? v.getNombrePiloto() : "ID: " + v.getIdPiloto(),
-                    v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "—",
-                    v.getFechaRegreso() != null ? v.getFechaRegreso().format(FMT) : "—",
+                    pilotoVal,
+                    salidaVal,
+                    regresoVal,
                     v.getEstado()
             });
         }
@@ -261,10 +291,22 @@ public class PanelVuelos extends JPanel {
         txtOrigen.setText(v.getOrigen());
         txtDestino.setText(v.getDestino());
         
-        txtSalida.setText(v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "");
+        String salidaText;
+        if (v.getFechaSalida() != null) {
+            salidaText = v.getFechaSalida().format(FMT);
+        } else {
+            salidaText = "";
+        }
+        txtSalida.setText(salidaText);
         txtSalida.setForeground(EstiloUI.TEXTO_BLANCO);
         
-        txtLlegada.setText(v.getFechaRegreso() != null ? v.getFechaRegreso().format(FMT) : "");
+        String llegadaText;
+        if (v.getFechaRegreso() != null) {
+            llegadaText = v.getFechaRegreso().format(FMT);
+        } else {
+            llegadaText = "";
+        }
+        txtLlegada.setText(llegadaText);
         txtLlegada.setForeground(EstiloUI.TEXTO_BLANCO);
 
         // Seleccionar avión correspondiente
@@ -333,7 +375,12 @@ public class PanelVuelos extends JPanel {
         Vuelo nuevoVuelo = new Vuelo(0, matricula, idPiloto, fechaSalida, fechaLlegada, estado, origen, destino);
 
         if (vueloDAO.insertarVuelo(nuevoVuelo)) {
-            String user = SesionManager.getInstance().getUsuarioActual() != null ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Sistema";
+            String user;
+            if (SesionManager.getInstance().getUsuarioActual() != null) {
+                user = SesionManager.getInstance().getUsuarioActual().getUsername();
+            } else {
+                user = "Sistema";
+            }
             auditoriaDAO.registrarAccion(user, "REGISTRAR_VUELO", "Matrícula: " + matricula + ", Ruta: " + origen + " - " + destino);
             LoggerManager.getInstance().logInfo("Vuelo registrado exitosamente para avión: " + matricula);
 
@@ -408,7 +455,12 @@ public class PanelVuelos extends JPanel {
         vueloSeleccionado.setDestino(destino);
 
         if (vueloDAO.actualizarVuelo(vueloSeleccionado)) {
-            String user = SesionManager.getInstance().getUsuarioActual() != null ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Operario";
+            String user;
+            if (SesionManager.getInstance().getUsuarioActual() != null) {
+                user = SesionManager.getInstance().getUsuarioActual().getUsername();
+            } else {
+                user = "Operario";
+            }
             auditoriaDAO.registrarAccion(user, "EDITAR_VUELO", "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo() + ", Ruta: " + origen + " - " + destino);
             LoggerManager.getInstance().logInfo("Vuelo ID: " + vueloSeleccionado.getIdVuelo() + " modificado bajo Manager Override.");
 
@@ -441,7 +493,12 @@ public class PanelVuelos extends JPanel {
 
         if (confirm == JOptionPane.YES_OPTION) {
             if (vueloDAO.eliminarVuelo(vueloSeleccionado.getIdVuelo())) {
-                String user = SesionManager.getInstance().getUsuarioActual() != null ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Operario";
+                String user;
+                if (SesionManager.getInstance().getUsuarioActual() != null) {
+                    user = SesionManager.getInstance().getUsuarioActual().getUsername();
+                } else {
+                    user = "Operario";
+                }
                 auditoriaDAO.registrarAccion(user, "ELIMINAR_VUELO", "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo());
                 LoggerManager.getInstance().logInfo("Vuelo ID: " + vueloSeleccionado.getIdVuelo() + " eliminado bajo Manager Override.");
 
@@ -483,8 +540,12 @@ public class PanelVuelos extends JPanel {
         txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
         txtLlegada.setText(DATE_PLACEHOLDER);
         txtLlegada.setForeground(EstiloUI.TEXTO_MUTED);
-        if (comboAvion.getItemCount() > 0) comboAvion.setSelectedIndex(0);
-        if (comboPiloto.getItemCount() > 0) comboPiloto.setSelectedIndex(0);
+        if (comboAvion.getItemCount() > 0) {
+            comboAvion.setSelectedIndex(0);
+        }
+        if (comboPiloto.getItemCount() > 0) {
+            comboPiloto.setSelectedIndex(0);
+        }
         comboEstado.setSelectedIndex(0);
         tablaVuelos.clearSelection();
         vueloSeleccionado = null;

@@ -23,8 +23,18 @@ public class PasajeroDAO {
             statement.setString(2, pasajero.getNumAsiento());
             statement.setInt(3, pasajero.getNivelPrioridad());
             LocalDateTime ts = pasajero.getTimestampLlegada();
-            statement.setTimestamp(4, ts != null ? Timestamp.valueOf(ts) : null);
-            statement.setString(5, pasajero.getMatricula() != null ? pasajero.getMatricula() : "");
+            if (ts != null) {
+                statement.setTimestamp(4, Timestamp.valueOf(ts));
+            } else {
+                statement.setTimestamp(4, null);
+            }
+            String matriculaVal;
+            if (pasajero.getMatricula() != null) {
+                matriculaVal = pasajero.getMatricula();
+            } else {
+                matriculaVal = "";
+            }
+            statement.setString(5, matriculaVal);
             statement.setString(6, pasajero.getPnr());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -41,8 +51,18 @@ public class PasajeroDAO {
             statement.setString(2, pasajero.getNumAsiento());
             statement.setInt(3, pasajero.getNivelPrioridad());
             LocalDateTime ts = pasajero.getTimestampLlegada();
-            statement.setTimestamp(4, ts != null ? Timestamp.valueOf(ts) : null);
-            statement.setString(5, pasajero.getMatricula() != null ? pasajero.getMatricula() : "");
+            if (ts != null) {
+                statement.setTimestamp(4, Timestamp.valueOf(ts));
+            } else {
+                statement.setTimestamp(4, null);
+            }
+            String matriculaVal;
+            if (pasajero.getMatricula() != null) {
+                matriculaVal = pasajero.getMatricula();
+            } else {
+                matriculaVal = "";
+            }
+            statement.setString(5, matriculaVal);
             statement.setString(6, pasajero.getPnr());
 
             if (statement.executeUpdate() > 0) {
@@ -73,7 +93,9 @@ public class PasajeroDAO {
                     p.setMatricula(resultSet.getString("matricula"));
                     p.setPnr(pnr);
                     Timestamp ts = resultSet.getTimestamp("timestampLlegada");
-                    if (ts != null) p.setTimestampLlegada(ts.toLocalDateTime());
+                    if (ts != null) {
+                        p.setTimestampLlegada(ts.toLocalDateTime());
+                    }
                     return p;
                 }
             }
@@ -112,7 +134,9 @@ public class PasajeroDAO {
                 p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                 p.setMatricula(resultSet.getString("matricula"));
                 Timestamp ts = resultSet.getTimestamp("timestampLlegada");
-                if (ts != null) p.setTimestampLlegada(ts.toLocalDateTime());
+                if (ts != null) {
+                    p.setTimestampLlegada(ts.toLocalDateTime());
+                }
                 pasajeros.add(p);
             }
         } catch (SQLException e) {
@@ -137,7 +161,9 @@ public class PasajeroDAO {
                     p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                     p.setMatricula(matricula);
                     Timestamp ts = resultSet.getTimestamp("timestampLlegada");
-                    if (ts != null) p.setTimestampLlegada(ts.toLocalDateTime());
+                    if (ts != null) {
+                        p.setTimestampLlegada(ts.toLocalDateTime());
+                    }
                     pasajeros.add(p);
                 }
             }

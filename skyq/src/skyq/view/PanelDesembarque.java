@@ -10,8 +10,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class PanelDesembarque extends JPanel {
+public final class PanelDesembarque extends JPanel {
 
+    private static final long serialVersionUID = 1L;
     private JTable tablaDesembarque;
     private DefaultTableModel modeloTabla;
     private JButton btnIniciarDesembarque;
@@ -33,8 +34,11 @@ public class PanelDesembarque extends JPanel {
         add(btnIniciarDesembarque, BorderLayout.NORTH);
 
         modeloTabla = new DefaultTableModel(new Object[]{"ID", "Nombre", "Asiento", "Prioridad", "Timestamp"}, 0) {
+            private static final long serialVersionUID = 1L;
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
 
         tablaDesembarque = new JTable(modeloTabla);

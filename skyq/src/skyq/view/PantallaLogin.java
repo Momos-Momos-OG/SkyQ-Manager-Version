@@ -7,7 +7,8 @@ import skyq.dao.UsuarioDAO;
 import skyq.logic.SesionManager;
 import skyq.model.Usuario;
 
-public class PantallaLogin extends JFrame {
+public final class PantallaLogin extends JFrame {
+    private static final long serialVersionUID = 1L;
     private JTextField txtUsuario;
     private JPasswordField txtContrasena;
     private JButton btnIngresar;
