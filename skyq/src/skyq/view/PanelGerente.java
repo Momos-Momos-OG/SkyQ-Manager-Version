@@ -258,6 +258,7 @@ public class PanelGerente extends JPanel {
         scrollCabina.setBorder(EstiloUI.BORDE_COMPONENTE);
         scrollCabina.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollCabina.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollCabina.getVerticalScrollBar().setUnitIncrement(16);
         card.add(scrollCabina, BorderLayout.CENTER);
 
         JButton btnEditar = new JButton("✏  EDITAR CONFIGURACIÓN");
@@ -998,26 +999,28 @@ public class PanelGerente extends JPanel {
             return;
         }
 
-        int capacidad = Integer.parseInt(capacidadTexto);
+        int capacidadEstimada = Integer.parseInt(capacidadTexto);
+        String distribucion = skyq.logic.AutoCalculadorCabina.calcularDistribucion(capacidadEstimada);
+        int capacidadReal = skyq.logic.AutoCalculadorCabina.calcularCapacidadTotal(distribucion);
+
         AvionDAO avionDAO = new AvionDAO();
         if (avionDAO.verificarMatriculaRegistrada(matricula)) {
             JOptionPane.showMessageDialog(this, "Esta matrícula ya está registrada en la flota.", "Duplicado",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
-        if (avionDAO.guardarAvion(new Avion(matricula, modelo, capacidad, estado))) {
-            String distribucion = skyq.logic.AutoCalculadorCabina.calcularDistribucion(capacidad);
+        if (avionDAO.guardarAvion(new Avion(matricula, modelo, capacidadReal, estado))) {
             ConfiguracionDAO confDAO = new ConfiguracionDAO();
             confDAO.guardarConfiguracion(matricula, distribucion);
 
-            LoggerManager.getInstance().logInfo("Avión registrado: " + matricula);
+            LoggerManager.getInstance().logInfo("Avión registrado: " + matricula + ". Capacidad real calculada: " + capacidadReal);
             AuditoriaDAO audDAO = new AuditoriaDAO();
             audDAO.registrarAccion(
                     SesionManager.getInstance().getUsuarioActual().getUsername(),
                     "REGISTRAR_AVION",
-                    "Matrícula: " + matricula + ", Modelo: " + modelo + ", Capacidad: " + capacidad);
+                    "Matrícula: " + matricula + ", Modelo: " + modelo + ", Capacidad Estimada: " + capacidadEstimada + ", Capacidad Real: " + capacidadReal);
 
-            JOptionPane.showMessageDialog(this, "Aeronave dada de alta exitosamente en la flota.");
+            JOptionPane.showMessageDialog(this, "Avión registrado. Capacidad ajustada a " + capacidadReal + " para cuadrar con la geometría de las filas.");
             panelRadarView.recargarDatosAviones();
         }
     }

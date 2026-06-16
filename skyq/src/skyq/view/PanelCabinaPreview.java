@@ -9,81 +9,101 @@ public class PanelCabinaPreview extends JPanel {
 
     public PanelCabinaPreview(String distribucion) {
         this.distribucion = distribucion;
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         setBorder(new EmptyBorder(15, 15, 15, 15));
+        rebuildUI();
     }
 
     public void actualizarDistribucion(String distribucion) {
         this.distribucion = distribucion;
-        repaint();
+        rebuildUI();
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
+    private void rebuildUI() {
+        removeAll();
         if (distribucion == null || distribucion.isEmpty()) {
-            g2.setColor(EstiloUI.TEXTO_MUTED);
-            g2.setFont(EstiloUI.FUENTE_LABEL);
-            g2.drawString("Sin configuración de cabina", 20, 30);
+            JLabel lbl = new JLabel("Sin configuración de cabina");
+            lbl.setForeground(EstiloUI.TEXTO_MUTED);
+            lbl.setFont(EstiloUI.FUENTE_LABEL);
+            lbl.setAlignmentX(Component.CENTER_ALIGNMENT);
+            add(lbl);
+            revalidate();
+            repaint();
             return;
         }
 
-        int x = 20;
-        int y = 30;
         String[] clases = distribucion.split("\\|");
+        int filaActual = 1;
 
         for (String clase : clases) {
             String[] partes = clase.split(":");
-            if (partes.length != 3)
-                continue;
+            if (partes.length != 3) continue;
 
             String nombreClase = partes[0];
             String distribucionAsientos = partes[1];
             int filas = Integer.parseInt(partes[2]);
 
             Color colorClase = obtenerColorClase(nombreClase);
-            dibujarSeccionCabina(g2, nombreClase, distribucionAsientos, filas, colorClase, x, y);
-            y += filas * 22 + 30;
-        }
-    }
 
-    private void dibujarSeccionCabina(Graphics2D g2, String nombre, String distribucion, int filas, Color color, int x,
-            int y) {
-        g2.setColor(EstiloUI.TEXTO_BLANCO);
-        g2.setFont(EstiloUI.FUENTE_LABEL);
-        g2.drawString(nombre, x, y);
+            // Cabecera de la sección (ej: "─── CLASE VIP ───")
+            JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            headerPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+            JLabel lblHeader = new JLabel("─── CLASE " + nombreClase + " (" + distribucionAsientos + ") ───");
+            lblHeader.setForeground(EstiloUI.TEXTO_MUTED);
+            lblHeader.setFont(new Font("SansSerif", Font.BOLD, 10));
+            headerPanel.add(lblHeader);
+            add(headerPanel);
+            add(Box.createRigidArea(new Dimension(0, 5)));
 
-        String[] columnas = distribucion.split("-");
-        int posY = y + 20;
+            String[] columnas = distribucionAsientos.split("-");
 
-        for (int fila = 0; fila < filas; fila++) {
-            int posX = x;
-            int bloqueNum = 0;
+            for (int f = 0; f < filas; f++) {
+                JPanel rowPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 2));
+                rowPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
 
-            for (String colStr : columnas) {
-                int cols = Integer.parseInt(colStr);
+                // Indicador de fila izquierdo
+                JLabel lblFilaIzq = new JLabel(String.valueOf(filaActual), SwingConstants.RIGHT);
+                lblFilaIzq.setForeground(EstiloUI.TEXTO_MUTED);
+                lblFilaIzq.setFont(new Font("SansSerif", Font.BOLD, 9));
+                lblFilaIzq.setPreferredSize(new Dimension(20, 16));
+                rowPanel.add(lblFilaIzq);
 
-                if (bloqueNum > 0) {
-                    posX += 15;
+                for (int b = 0; b < columnas.length; b++) {
+                    int cols = Integer.parseInt(columnas[b]);
+
+                    for (int c = 0; c < cols; c++) {
+                        JPanel seat = new JPanel();
+                        seat.setPreferredSize(new Dimension(16, 16));
+                        seat.setBackground(colorClase);
+                        seat.setBorder(BorderFactory.createLineBorder(EstiloUI.FONDO_DARK_PRINCIPAL, 1));
+                        rowPanel.add(seat);
+                    }
+
+                    // Pasillo
+                    if (b < columnas.length - 1) {
+                        JPanel spacer = new JPanel();
+                        spacer.setPreferredSize(new Dimension(14, 16));
+                        spacer.setOpaque(false);
+                        rowPanel.add(spacer);
+                    }
                 }
 
-                for (int col = 0; col < cols; col++) {
-                    g2.setColor(color);
-                    g2.fillRect(posX, posY, 16, 16);
-                    g2.setColor(EstiloUI.FONDO_DARK_PRINCIPAL);
-                    g2.setStroke(new BasicStroke(1f));
-                    g2.drawRect(posX, posY, 16, 16);
-                    posX += 18;
-                }
+                // Indicador de fila derecho
+                JLabel lblFilaDer = new JLabel(String.valueOf(filaActual), SwingConstants.LEFT);
+                lblFilaDer.setForeground(EstiloUI.TEXTO_MUTED);
+                lblFilaDer.setFont(new Font("SansSerif", Font.BOLD, 9));
+                lblFilaDer.setPreferredSize(new Dimension(20, 16));
+                rowPanel.add(lblFilaDer);
 
-                bloqueNum++;
+                add(rowPanel);
+                add(Box.createRigidArea(new Dimension(0, 4)));
+                filaActual++;
             }
-
-            posY += 20;
+            add(Box.createRigidArea(new Dimension(0, 15)));
         }
+        revalidate();
+        repaint();
     }
 
     private Color obtenerColorClase(String clase) {
@@ -92,5 +112,17 @@ public class PanelCabinaPreview extends JPanel {
             case "EJEC" -> new Color(135, 206, 250);
             default -> new Color(128, 128, 128);
         };
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        int width = 0;
+        int height = 0;
+        for (Component comp : getComponents()) {
+            Dimension d = comp.getPreferredSize();
+            width = Math.max(width, d.width);
+            height += d.height;
+        }
+        return new Dimension(width + 30, height + 30);
     }
 }

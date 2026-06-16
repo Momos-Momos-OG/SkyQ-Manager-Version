@@ -31,4 +31,10 @@ public class ValidadorFormulario {
     public static boolean esMatriculaValida(String matricula) {
         return matricula != null && MATRICULA_PATTERN.matcher(matricula.trim().toUpperCase()).matches();
     }
+
+    public static boolean esDistribucionValida(String distribucion) {
+        if (distribucion == null) return false;
+        String regex = "^[1-9][0-9]*(-[1-9][0-9]*)+$";
+        return Pattern.matches(regex, distribucion.trim());
+    }
 }

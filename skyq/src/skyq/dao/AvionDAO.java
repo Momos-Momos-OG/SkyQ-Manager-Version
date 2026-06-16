@@ -77,4 +77,17 @@ public class AvionDAO {
             return false;
         }
     }
+
+    public boolean actualizarCapacidad(String matricula, int nuevaCapacidad) {
+        String sql = "UPDATE aviones SET capacidad = ? WHERE matricula = ?";
+        try (Connection connection = ConexionBD.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, nuevaCapacidad);
+            statement.setString(2, matricula);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
+            return false;
+        }
+    }
 }

@@ -1,8 +1,15 @@
 package skyq.database;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ConexionBD {
 
@@ -10,16 +17,122 @@ public class ConexionBD {
     private static final String USER = getEnvOrDefault("SQLSERVER_USER", "SA");
     private static final String PASSWORD = getEnvOrDefault("SQLSERVER_PASSWORD", "Momos@123");
 
+    private static final int POOL_SIZE = 8;
+    private static final BlockingQueue<Connection> pool = new ArrayBlockingQueue<>(POOL_SIZE);
+    private static final List<Connection> todasLasConexiones = new ArrayList<>();
+    private static boolean inicializado = false;
+
+    private static synchronized void inicializarPool() {
+        if (inicializado) return;
+        try {
+            for (int i = 0; i < POOL_SIZE; i++) {
+                Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+                pool.add(conn);
+                todasLasConexiones.add(conn);
+            }
+            inicializado = true;
+            // Registrar shutdown hook para cierre físico ordenado
+            Runtime.getRuntime().addShutdownHook(new Thread(ConexionBD::cerrarTodoFisicamente));
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error inicializando pool de conexiones", e);
+            throw new RuntimeException("No se pudo inicializar el pool de conexiones", e);
+        }
+    }
+
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        if (!inicializado) {
+            inicializarPool();
+        }
+
+        Connection physicalConn;
+        try {
+            // Obtener de forma bloqueante y thread-safe una conexión del pool
+            physicalConn = pool.take();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SQLException("Hilo interrumpido al obtener conexión del pool", e);
+        }
+
+        // Validar salud de la conexión física antes de entregarla
+        try {
+            if (physicalConn.isClosed()) {
+                physicalConn = DriverManager.getConnection(URL, USER, PASSWORD);
+                synchronized (ConexionBD.class) {
+                    todasLasConexiones.add(physicalConn);
+                }
+            }
+        } catch (SQLException e) {
+            pool.offer(physicalConn); // Retornarla en caso de error para no vaciar el pool
+            throw e;
+        }
+
+        final Connection finalPhysicalConn = physicalConn;
+
+        // Retorna un Dynamic Proxy para interceptar close() y devolver la conexión al pool
+        return (Connection) Proxy.newProxyInstance(
+                ConexionBD.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                new InvocationHandler() {
+                    @Override
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                        if ("close".equals(method.getName())) {
+                            releaseConnection(finalPhysicalConn);
+                            return null;
+                        }
+                        try {
+                            return method.invoke(finalPhysicalConn, args);
+                        } catch (java.lang.reflect.InvocationTargetException e) {
+                            throw e.getCause();
+                        }
+                    }
+                }
+        );
+    }
+
+    public static void releaseConnection(Connection connection) {
+        if (connection != null) {
+            try {
+                if (!connection.isClosed()) {
+                    pool.offer(connection);
+                } else {
+                    // Reemplazar conexión dañada por una nueva
+                    Connection nuevaConn = DriverManager.getConnection(URL, USER, PASSWORD);
+                    synchronized (ConexionBD.class) {
+                        todasLasConexiones.add(nuevaConn);
+                    }
+                    pool.offer(nuevaConn);
+                }
+            } catch (SQLException e) {
+                skyq.logic.LoggerManager.getInstance().logError("Error al liberar/recrear conexión física", e);
+            }
+        }
+    }
+
+    public static synchronized void cerrarTodoFisicamente() {
+        if (!inicializado) return;
+        for (Connection conn : todasLasConexiones) {
+            if (conn != null) {
+                try {
+                    if (!conn.isClosed()) {
+                        conn.close();
+                    }
+                } catch (SQLException e) {
+                    System.err.println("Error al cerrar conexión física en shutdown hook: " + e.getMessage());
+                }
+            }
+        }
+        todasLasConexiones.clear();
+        pool.clear();
+        inicializado = false;
+        System.out.println("Pool de conexiones de SkyQ liberado físicamente.");
     }
 
     public static void closeConnection(Connection connection) {
         if (connection != null) {
             try {
-                connection.close();
+                connection.close(); // Invoca el proxy, el cual llama a releaseConnection
             } catch (SQLException e) {
-                skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
+                skyq.logic.LoggerManager.getInstance().logError("Error SQL al cerrar proxy de conexión", e);
             }
         }
     }
@@ -29,7 +142,6 @@ public class ConexionBD {
         if (value == null || value.trim().isEmpty()) {
             return defaultValue;
         }
-
         return value;
     }
 }

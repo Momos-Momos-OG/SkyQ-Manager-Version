@@ -126,6 +126,7 @@ public class DialogoEditarAvion extends JDialog {
         panel.add(lblCapacidad, gbc);
 
         txtCapacidad = new JTextField(String.valueOf(avion.getCapacidad()), 15);
+        txtCapacidad.setEditable(false);
         estilizarCampo(txtCapacidad);
         gbc.gridx = 1;
         gbc.gridy = 2;
@@ -224,6 +225,7 @@ public class DialogoEditarAvion extends JDialog {
         JScrollPane scroll = new JScrollPane(cabinaPreview);
         scroll.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         scroll.setBorder(EstiloUI.BORDE_COMPONENTE);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
         panel.add(scroll, BorderLayout.CENTER);
 
         JButton btnEditar = new JButton("✏  Editar Distribución");
@@ -233,10 +235,11 @@ public class DialogoEditarAvion extends JDialog {
         btnEditar.setBorderPainted(false);
         PanelRadarView.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
         btnEditar.addActionListener(e -> {
+            String distActual = confDAO.obtenerDistribucion(avion.getMatricula());
             DialogoConfigurarCabina dialogo = new DialogoConfigurarCabina(
-                    (Frame) SwingUtilities.getWindowAncestor(DialogoEditarAvion.this),
+                    DialogoEditarAvion.this,
                     avion.getMatricula(),
-                    distribucion);
+                    distActual != null ? distActual : distribucion);
             dialogo.setVisible(true);
             cabinaPreview.actualizarDistribucion(confDAO.obtenerDistribucion(avion.getMatricula()));
         });
@@ -270,7 +273,7 @@ public class DialogoEditarAvion extends JDialog {
             confDAO.guardarConfiguracion(avion.getMatricula(), distribucion);
         }
         new DialogoConfigurarCabina(
-                (Frame) SwingUtilities.getWindowAncestor(this),
+                this,
                 avion.getMatricula(),
                 distribucion).setVisible(true);
     }
@@ -381,5 +384,10 @@ public class DialogoEditarAvion extends JDialog {
             JOptionPane.showMessageDialog(this, "Capacidad debe ser un número válido.", "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public void actualizarCapacidadUI(int nuevaCapacidad) {
+        avion.setCapacidad(nuevaCapacidad);
+        txtCapacidad.setText(String.valueOf(nuevaCapacidad));
     }
 }

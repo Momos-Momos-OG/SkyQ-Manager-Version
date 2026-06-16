@@ -30,13 +30,14 @@ public class PanelRadarView extends JPanel {
     // Estado de la animación de barrido del radar
     private double anguloBarrido = 0.0;
     private int avionHover = -1; // Índice del avión sobre el que está el cursor
+    private final Timer timerBarrido;
 
     public PanelRadarView() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         recargarDatosAviones();
 
         // Timer de animación: refresca el barrido cada 30ms (~33 FPS)
-        Timer timerBarrido = new Timer(30, e -> {
+        timerBarrido = new Timer(30, e -> {
             anguloBarrido = (anguloBarrido + 1.5) % 360;
             repaint();
         });
@@ -75,6 +76,14 @@ public class PanelRadarView extends JPanel {
                         : Cursor.getDefaultCursor());
             }
         });
+    }
+
+    @Override
+    public void removeNotify() {
+        if (timerBarrido != null && timerBarrido.isRunning()) {
+            timerBarrido.stop();
+        }
+        super.removeNotify();
     }
 
     public final void recargarDatosAviones() {
