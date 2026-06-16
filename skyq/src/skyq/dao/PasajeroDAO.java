@@ -16,7 +16,7 @@ import java.util.List;
 public class PasajeroDAO {
 
     public boolean insertarPasajero(Pasajero pasajero) {
-        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pasajero.getNombre());
@@ -25,6 +25,7 @@ public class PasajeroDAO {
             LocalDateTime ts = pasajero.getTimestampLlegada();
             statement.setTimestamp(4, ts != null ? Timestamp.valueOf(ts) : null);
             statement.setString(5, pasajero.getMatricula() != null ? pasajero.getMatricula() : "");
+            statement.setString(6, pasajero.getPnr());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
@@ -33,7 +34,7 @@ public class PasajeroDAO {
     }
 
     public int insertarPasajeroYObtenerId(Pasajero pasajero) {
-        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, pasajero.getNombre());
@@ -42,6 +43,7 @@ public class PasajeroDAO {
             LocalDateTime ts = pasajero.getTimestampLlegada();
             statement.setTimestamp(4, ts != null ? Timestamp.valueOf(ts) : null);
             statement.setString(5, pasajero.getMatricula() != null ? pasajero.getMatricula() : "");
+            statement.setString(6, pasajero.getPnr());
 
             if (statement.executeUpdate() > 0) {
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
@@ -54,6 +56,45 @@ public class PasajeroDAO {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
         }
         return -1;
+    }
+
+    public Pasajero obtenerPasajeroPorPNR(String pnr) {
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero WHERE pnr = ?";
+        try (Connection connection = ConexionBD.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, pnr);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    Pasajero p = new Pasajero();
+                    p.setIdPasajero(resultSet.getInt("idPasajero"));
+                    p.setNombre(resultSet.getString("nombre"));
+                    p.setNumAsiento(resultSet.getString("numAsiento"));
+                    p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
+                    p.setMatricula(resultSet.getString("matricula"));
+                    p.setPnr(pnr);
+                    Timestamp ts = resultSet.getTimestamp("timestampLlegada");
+                    if (ts != null) p.setTimestampLlegada(ts.toLocalDateTime());
+                    return p;
+                }
+            }
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al obtener pasajero por PNR", e);
+        }
+        return null;
+    }
+
+    public boolean realizarCheckIn(int idPasajero, String numAsiento, LocalDateTime timestampLlegada) {
+        String sql = "UPDATE pasajero SET numAsiento = ?, timestampLlegada = ? WHERE idPasajero = ?";
+        try (Connection conn = ConexionBD.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, numAsiento);
+            ps.setTimestamp(2, Timestamp.valueOf(timestampLlegada));
+            ps.setInt(3, idPasajero);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al realizar check-in", e);
+            return false;
+        }
     }
 
     // Método original global para evitar errores de compilación

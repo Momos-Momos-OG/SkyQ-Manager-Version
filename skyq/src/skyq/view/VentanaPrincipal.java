@@ -33,8 +33,12 @@ public class VentanaPrincipal extends JFrame {
         if (usuarioActual != null && usuarioActual.isGerente()) {
             tabbedPane.addTab("1. Centro de Comando (Gerente)", new PanelGerente());
             tabbedPane.addTab("2. Gestión Operativa de Pasajeros", new PanelCheckIn());
+            tabbedPane.addTab("3. Ventas / Booking", new PanelVentas());
+            tabbedPane.addTab("4. Programación de Vuelos", new PanelVuelos());
         } else if (usuarioActual != null && usuarioActual.isOperario()) {
             tabbedPane.addTab("1. Gestión Operativa de Pasajeros", new PanelCheckIn());
+            tabbedPane.addTab("2. Ventas / Booking", new PanelVentas());
+            tabbedPane.addTab("3. Programación de Vuelos", new PanelVuelos());
         }
 
         add(tabbedPane, BorderLayout.CENTER);

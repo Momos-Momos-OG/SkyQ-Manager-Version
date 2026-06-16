@@ -23,11 +23,15 @@ public class PanelCheckIn extends JPanel {
     private CardLayout cardLayoutModos;
 
     // Campos del flujo Check-In
+    private JTextField txtBuscarPNR;
     private JTextField txtNombrePasajero, txtPesoEquipaje;
     private JComboBox<String> comboPrioridad;
     private JLabel lblAsientoAsignado;
     private JPanel contenedorDinamicoCabina;
     private String asientoElegido = "";
+    private JButton btnEnviarCheckIn;
+    private Pasajero pasajeroCargado = null;
+    private MapaAsientosPanel planoRealTime = null;
 
     // Componentes de las tablas de Abordaje/Desembarque
     private DefaultTableModel modeloTablaFlujo;
@@ -129,29 +133,46 @@ public class PanelCheckIn extends JPanel {
         formCard.setPreferredSize(new Dimension(360, 500));
         formCard.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(20, 15, 20, 15)));
 
+        txtBuscarPNR = crearFieldEstilizado();
+        JButton btnBuscarPNR = new JButton("BUSCAR");
+        btnBuscarPNR.setBackground(EstiloUI.AZUL_ACCENT); btnBuscarPNR.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnBuscarPNR.setBorderPainted(false); btnBuscarPNR.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnBuscarPNR.setFocusPainted(false);
+        PanelRadarView.aplicarHover(btnBuscarPNR, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+
+        JPanel panelBuscar = new JPanel(new BorderLayout(5, 0));
+        panelBuscar.setBackground(EstiloUI.FONDO_TARJETA);
+        panelBuscar.add(txtBuscarPNR, BorderLayout.CENTER);
+        panelBuscar.add(btnBuscarPNR, BorderLayout.EAST);
+
         txtNombrePasajero = crearFieldEstilizado();
+        txtNombrePasajero.setEditable(false);
         txtPesoEquipaje = crearFieldEstilizado();
         comboPrioridad = new JComboBox<>(new String[]{"1", "2", "3"});
         comboPrioridad.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL); comboPrioridad.setForeground(EstiloUI.TEXTO_BLANCO);
+        comboPrioridad.setEnabled(false);
 
         lblAsientoAsignado = new JLabel("[ Seleccione en el Mapa ]");
         lblAsientoAsignado.setForeground(Color.CYAN); lblAsientoAsignado.setFont(EstiloUI.FUENTE_SUBTITULO);
 
-        JButton btnEnviarCheckIn = new JButton("EMITIR PASE DE ABORDAJE");
+        btnEnviarCheckIn = new JButton("EMITIR PASE DE ABORDAJE");
         btnEnviarCheckIn.setBackground(EstiloUI.AZUL_ACCENT); btnEnviarCheckIn.setForeground(EstiloUI.TEXTO_BLANCO); btnEnviarCheckIn.setBorderPainted(false); btnEnviarCheckIn.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnEnviarCheckIn.setEnabled(false);
+        PanelRadarView.aplicarHover(btnEnviarCheckIn, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(10, 5, 10, 5); g.fill = GridBagConstraints.HORIZONTAL; g.anchor = GridBagConstraints.WEST;
+        g.insets = new Insets(8, 5, 8, 5); g.fill = GridBagConstraints.HORIZONTAL; g.anchor = GridBagConstraints.WEST;
 
         g.gridx = 0; g.gridy = 0; g.gridwidth = 2;
         JLabel lblTitle = new JLabel("REGISTRO DE PASAJEROS"); lblTitle.setForeground(EstiloUI.TEXTO_BLANCO); lblTitle.setFont(EstiloUI.FUENTE_TITULO); formCard.add(lblTitle, g);
 
         g.gridwidth = 1;
-        g.gridx = 0; g.gridy = 1; formCard.add(new JLabel("Nombre Pasajero:"), g); g.gridx = 1; formCard.add(txtNombrePasajero, g);
-        g.gridx = 0; g.gridy = 2; formCard.add(new JLabel("Categoría Vuelo:"), g); g.gridx = 1; formCard.add(comboPrioridad, g);
-        g.gridx = 0; g.gridy = 3; formCard.add(new JLabel("Butaca Asignada:"), g); g.gridx = 1; formCard.add(lblAsientoAsignado, g);
-        g.gridx = 0; g.gridy = 4; formCard.add(new JLabel("Peso Maleta (kg):"), g); g.gridx = 1; formCard.add(txtPesoEquipaje, g);
-        g.gridx = 0; g.gridy = 5; g.gridwidth = 2; g.insets = new Insets(25, 5, 5, 5); formCard.add(btnEnviarCheckIn, g);
+        g.gridx = 0; g.gridy = 1; formCard.add(new JLabel("Código PNR:"), g); g.gridx = 1; formCard.add(panelBuscar, g);
+        g.gridx = 0; g.gridy = 2; formCard.add(new JLabel("Nombre Pasajero:"), g); g.gridx = 1; formCard.add(txtNombrePasajero, g);
+        g.gridx = 0; g.gridy = 3; formCard.add(new JLabel("Categoría Vuelo:"), g); g.gridx = 1; formCard.add(comboPrioridad, g);
+        g.gridx = 0; g.gridy = 4; formCard.add(new JLabel("Butaca Asignada:"), g); g.gridx = 1; formCard.add(lblAsientoAsignado, g);
+        g.gridx = 0; g.gridy = 5; formCard.add(new JLabel("Peso Maleta (kg):"), g); g.gridx = 1; formCard.add(txtPesoEquipaje, g);
+        g.gridx = 0; g.gridy = 6; g.gridwidth = 2; g.insets = new Insets(20, 5, 5, 5); formCard.add(btnEnviarCheckIn, g);
 
         for (Component comp : formCard.getComponents()) {
             if (comp instanceof JLabel && comp != lblTitle && comp != lblAsientoAsignado) {
@@ -166,6 +187,8 @@ public class PanelCheckIn extends JPanel {
         contenedorDinamicoCabina.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, new EmptyBorder(15, 15, 15, 15)));
         splitPanel.add(contenedorDinamicoCabina, BorderLayout.CENTER);
 
+        txtBuscarPNR.addActionListener(e -> buscarReservaPNR());
+        btnBuscarPNR.addActionListener(e -> buscarReservaPNR());
         comboPrioridad.addActionListener(e -> refrescarPlanoAvion());
         btnEnviarCheckIn.addActionListener(e -> procesarGuardadoCheckIn());
 
@@ -218,7 +241,7 @@ public class PanelCheckIn extends JPanel {
         contenedorDinamicoCabina.removeAll();
 
         // Se inicializa el mapa enviando de forma contextual la matrícula actual
-        MapaAsientosPanel planoRealTime = new MapaAsientosPanel(matricula, codigoAsiento -> {
+        planoRealTime = new MapaAsientosPanel(matricula, codigoAsiento -> {
             // 🔥 CORREGIDO: Llamada segura al método unificado por matrícula y vuelo
             if (pasajeroDAO.verificarAsientoOcupadoEnVuelo(codigoAsiento, matricula)) {
                 JOptionPane.showMessageDialog(this, "Esta butaca ya está ocupada en este vuelo.", "Validación", JOptionPane.WARNING_MESSAGE);
@@ -228,43 +251,146 @@ public class PanelCheckIn extends JPanel {
             lblAsientoAsignado.setText("Asiento Seleccionado: " + codigoAsiento);
         });
 
+        // Aplicar bloqueo de plano de asientos de acuerdo al estado del avión actual
+        String estadoAvion = avionDAO.obtenerEstado(matricula);
+        boolean bloqueado = "Fuera de servicio".equalsIgnoreCase(estadoAvion)
+                || "En mantenimiento".equalsIgnoreCase(estadoAvion)
+                || "En Vuelo".equalsIgnoreCase(estadoAvion);
+
+        if (bloqueado) {
+            planoRealTime.setSeleccionBloqueada(true);
+            if (btnEnviarCheckIn != null) btnEnviarCheckIn.setEnabled(false);
+        } else {
+            planoRealTime.setSeleccionBloqueada(false);
+            if (btnEnviarCheckIn != null) btnEnviarCheckIn.setEnabled(pasajeroCargado != null);
+        }
+
         contenedorDinamicoCabina.add(planoRealTime, BorderLayout.CENTER);
         contenedorDinamicoCabina.revalidate();
         contenedorDinamicoCabina.repaint();
     }
 
     private void procesarGuardadoCheckIn() {
-        String nombre = txtNombrePasajero.getText().trim();
-        String pesoTexto = txtPesoEquipaje.getText().trim();
-        String prioridadTexto = (String) comboPrioridad.getSelectedItem();
-        String matricula = obtenerMatriculaActiva();
-
-        if (nombre.isEmpty() || asientoElegido.isEmpty() || pesoTexto.isEmpty() || prioridadTexto == null) {
-            JOptionPane.showMessageDialog(this, "Complete todos los campos del pasajero.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (pasajeroCargado == null) {
+            JOptionPane.showMessageDialog(this, "Debe buscar y cargar un pasajero por PNR primero.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        int prioridad = Integer.parseInt(prioridadTexto);
-        double peso = Double.parseDouble(pesoTexto);
+        String pesoTexto = txtPesoEquipaje.getText().trim();
+        String matricula = obtenerMatriculaActiva();
 
+        if (asientoElegido.isEmpty() || pesoTexto.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Seleccione un asiento en el mapa y complete el peso de la maleta.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        double peso;
+        try {
+            peso = Double.parseDouble(pesoTexto);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "El peso de la maleta debe ser un número válido.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int prioridad = pasajeroCargado.getNivelPrioridad();
         double pesoMaximo = (prioridad == 1) ? 32.0 : (prioridad == 2) ? 23.0 : 15.0;
         if (peso > pesoMaximo) {
             JOptionPane.showMessageDialog(this, "El equipaje excede el peso permitido (" + pesoMaximo + "kg) para prioridad " + prioridad, "Sobrepeso", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // 🔥 CORREGIDO: Llamada limpia al constructor extendido de 6 parámetros
-        Pasajero pasajero = new Pasajero(0, nombre, asientoElegido, prioridad, LocalDateTime.now(), matricula);
-        int idPasajero = pasajeroDAO.insertarPasajeroYObtenerId(pasajero);
-
-        if (idPasajero > 0) {
-            Equipaje equipaje = new Equipaje(0, idPasajero, peso, "Aceptado");
+        // Realizar Check-In: actualizar asiento y timestamp de llegada en BD
+        LocalDateTime fechaLlegada = LocalDateTime.now();
+        if (pasajeroDAO.realizarCheckIn(pasajeroCargado.getIdPasajero(), asientoElegido, fechaLlegada)) {
+            // Registrar Equipaje
+            Equipaje equipaje = new Equipaje(0, pasajeroCargado.getIdPasajero(), peso, "Aceptado");
             if (equipajeDAO.registrarEquipaje(equipaje)) {
                 JOptionPane.showMessageDialog(this, "¡Pase de abordar emitido con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                txtNombrePasajero.setText(""); txtPesoEquipaje.setText(""); asientoElegido = "";
-                lblAsientoAsignado.setText("[ Seleccione en el Mapa ]");
+                txtBuscarPNR.setText("");
+                limpiarCamposCheckIn();
                 refrescarPlanoAvion();
+            } else {
+                JOptionPane.showMessageDialog(this, "Check-in realizado, pero error al registrar el equipaje.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             }
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al procesar el check-in en la base de datos.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void buscarReservaPNR() {
+        String pnr = txtBuscarPNR.getText().trim().toUpperCase();
+        if (pnr.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese un código PNR para buscar.", "Validación", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Pasajero p = pasajeroDAO.obtenerPasajeroPorPNR(pnr);
+        if (p == null) {
+            JOptionPane.showMessageDialog(this, "Reserva no encontrada.", "Error", JOptionPane.ERROR_MESSAGE);
+            limpiarCamposCheckIn();
+            return;
+        }
+
+        if (p.getTimestampLlegada() != null) {
+            JOptionPane.showMessageDialog(this, "El pasajero ya realizó el check-in para este vuelo.", "Información", JOptionPane.INFORMATION_MESSAGE);
+            limpiarCamposCheckIn();
+            return;
+        }
+
+        // Cargar datos
+        pasajeroCargado = p;
+        txtNombrePasajero.setText(p.getNombre());
+        comboPrioridad.setSelectedItem(String.valueOf(p.getNivelPrioridad()));
+        asientoElegido = "";
+        lblAsientoAsignado.setText("[ Seleccione en el Mapa ]");
+
+        // Seleccionar automáticamente el avión en comboVuelosFlota
+        boolean encontrado = false;
+        for (int i = 0; i < comboVuelosFlota.getItemCount(); i++) {
+            String item = comboVuelosFlota.getItemAt(i);
+            if (item.startsWith(p.getMatricula())) {
+                comboVuelosFlota.setSelectedIndex(i);
+                encontrado = true;
+                break;
+            }
+        }
+        
+        if (!encontrado) {
+            refrescarPlanoAvion();
+        }
+
+        // Validar el estado del avión
+        String estadoAvion = avionDAO.obtenerEstado(p.getMatricula());
+        boolean bloqueado = "Fuera de servicio".equalsIgnoreCase(estadoAvion)
+                || "En mantenimiento".equalsIgnoreCase(estadoAvion)
+                || "En Vuelo".equalsIgnoreCase(estadoAvion);
+
+        if (bloqueado) {
+            btnEnviarCheckIn.setEnabled(false);
+            if (planoRealTime != null) {
+                planoRealTime.setSeleccionBloqueada(true);
+            }
+            JOptionPane.showMessageDialog(this,
+                    "Check-in inhabilitado. El avión actualmente se encuentra: " + estadoAvion,
+                    "Advertencia de Seguridad",
+                    JOptionPane.WARNING_MESSAGE);
+        } else {
+            btnEnviarCheckIn.setEnabled(true);
+            if (planoRealTime != null) {
+                planoRealTime.setSeleccionBloqueada(false);
+            }
+        }
+    }
+
+    private void limpiarCamposCheckIn() {
+        pasajeroCargado = null;
+        txtNombrePasajero.setText("");
+        txtPesoEquipaje.setText("");
+        lblAsientoAsignado.setText("[ Seleccione en el Mapa ]");
+        asientoElegido = "";
+        btnEnviarCheckIn.setEnabled(false);
+        if (planoRealTime != null) {
+            planoRealTime.setSeleccionBloqueada(true);
         }
     }
 

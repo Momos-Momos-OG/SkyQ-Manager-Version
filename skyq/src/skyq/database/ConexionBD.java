@@ -30,6 +30,22 @@ public class ConexionBD {
                 pool.add(conn);
                 todasLasConexiones.add(conn);
             }
+            
+            // Ejecutar migración automática de esquema (columna PNR y vuelos)
+            if (!todasLasConexiones.isEmpty()) {
+                Connection migrationConn = todasLasConexiones.get(0);
+                try (java.sql.Statement stmt = migrationConn.createStatement()) {
+                    // Migración pasajero
+                    stmt.execute("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.pasajero') AND name = 'pnr') " +
+                                 "BEGIN ALTER TABLE dbo.pasajero ADD pnr VARCHAR(20) NULL; END");
+                    // Migración vuelos (origen y destino)
+                    stmt.execute("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.vuelos') AND name = 'origen') " +
+                                 "BEGIN ALTER TABLE dbo.vuelos ADD origen VARCHAR(100) NULL, destino VARCHAR(100) NULL; END");
+                } catch (SQLException ex) {
+                    skyq.logic.LoggerManager.getInstance().logError("Error ejecutando migración de esquema", ex);
+                }
+            }
+            
             inicializado = true;
             // Registrar shutdown hook para cierre físico ordenado
             Runtime.getRuntime().addShutdownHook(new Thread(ConexionBD::cerrarTodoFisicamente));

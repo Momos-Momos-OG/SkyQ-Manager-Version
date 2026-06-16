@@ -10,6 +10,7 @@ public class Pasajero {
     private int nivelPrioridad;
     private LocalDateTime timestampLlegada;
     private String matricula; // Relación contextual con el avión
+    private String pnr;       // Código de reserva PNR
 
     public Pasajero() {
     }
@@ -22,6 +23,7 @@ public class Pasajero {
         this.nivelPrioridad = nivelPrioridad;
         this.timestampLlegada = timestampLlegada;
         this.matricula = "";
+        this.pnr = "";
     }
 
     // Constructor completo de 6 parámetros para el Dashboard Operativo
@@ -32,6 +34,18 @@ public class Pasajero {
         this.nivelPrioridad = nivelPrioridad;
         this.timestampLlegada = timestampLlegada;
         this.matricula = matricula;
+        this.pnr = "";
+    }
+
+    // Constructor completo de 7 parámetros para incluir el PNR
+    public Pasajero(int idPasajero, String nombre, String numAsiento, int nivelPrioridad, LocalDateTime timestampLlegada, String matricula, String pnr) {
+        this.idPasajero = idPasajero;
+        this.nombre = nombre;
+        this.numAsiento = numAsiento;
+        this.nivelPrioridad = nivelPrioridad;
+        this.timestampLlegada = timestampLlegada;
+        this.matricula = matricula;
+        this.pnr = pnr;
     }
 
     public int getIdPasajero() { return idPasajero; }
@@ -51,4 +65,7 @@ public class Pasajero {
 
     public String getMatricula() { return matricula; }
     public void setMatricula(String matricula) { this.matricula = matricula; }
+
+    public String getPnr() { return pnr; }
+    public void setPnr(String pnr) { this.pnr = pnr; }
 }

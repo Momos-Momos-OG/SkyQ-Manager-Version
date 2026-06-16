@@ -89,5 +89,21 @@ public class AvionDAO {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
             return false;
         }
+     }
+
+    public String obtenerEstado(String matricula) {
+        String sql = "SELECT estado FROM aviones WHERE matricula = ?";
+        try (Connection connection = ConexionBD.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, matricula);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("estado");
+                }
+            }
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al obtener estado del avion", e);
+        }
+        return null;
     }
 }

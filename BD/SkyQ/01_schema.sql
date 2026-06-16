@@ -108,6 +108,7 @@ BEGIN
         nivelPrioridad   INT           NOT NULL,      -- 1=VIP, 2=Normal, 3=Básico
         timestampLlegada DATETIME2     NULL,
         matricula        VARCHAR(20)   NOT NULL DEFAULT 'HC-BXA',  -- FK lógica hacia aviones
+        pnr              VARCHAR(20)   NULL,
         CONSTRAINT PK_pasajero PRIMARY KEY (idPasajero)
     );
 END;
@@ -186,6 +187,8 @@ BEGIN
         fechaSalida  DATETIME2    NOT NULL,
         fechaRegreso DATETIME2    NOT NULL,
         estado       VARCHAR(30)  NOT NULL DEFAULT 'Programado',
+        origen       VARCHAR(100) NULL,
+        destino      VARCHAR(100) NULL,
                                               -- 'Programado' | 'En Vuelo' | 'Completado' | 'Cancelado'
         CONSTRAINT PK_vuelos PRIMARY KEY (idVuelo),
         CONSTRAINT FK_vuelos_avion

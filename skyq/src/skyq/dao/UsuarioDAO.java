@@ -30,4 +30,20 @@ public class UsuarioDAO {
         }
         return null;
     }
+
+    public static boolean verificarPasswordGerente(String password) {
+        String sql = "SELECT COUNT(*) FROM usuarios WHERE rol = 'GERENTE' AND password_hash = ? AND estado = 'Activo'";
+        try (Connection connection = ConexionBD.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, password);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al verificar contraseña de Gerente", e);
+        }
+        return false;
+    }
 }

@@ -16,6 +16,7 @@ public class MapaAsientosPanel extends JPanel {
     private final AsientoSeleccionadoListener listener;
     private final PasajeroDAO pasajeroDAO;
     private JToggleButton asientoSeleccionadoActual = null;
+    private boolean seleccionBloqueada = false;
 
     public interface AsientoSeleccionadoListener {
         void onAsientoSeleccionado(String codigoAsiento);
@@ -148,5 +149,23 @@ public class MapaAsientosPanel extends JPanel {
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         add(scroll, BorderLayout.CENTER);
+    }
+
+    public void setSeleccionBloqueada(boolean bloqueada) {
+        this.seleccionBloqueada = bloqueada;
+        deshabilitarBotonesRecursivo(this, !bloqueada);
+    }
+
+    private void deshabilitarBotonesRecursivo(Container container, boolean enabled) {
+        for (Component comp : container.getComponents()) {
+            if (comp instanceof JToggleButton) {
+                // Solo habilitar si no es un asiento ocupado
+                if (comp.getBackground() != EstiloUI.ASIENTO_OCUPADO) {
+                    comp.setEnabled(enabled);
+                }
+            } else if (comp instanceof Container) {
+                deshabilitarBotonesRecursivo((Container) comp, enabled);
+            }
+        }
     }
 }

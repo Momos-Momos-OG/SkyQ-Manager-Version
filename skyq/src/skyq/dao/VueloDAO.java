@@ -21,7 +21,7 @@ public class VueloDAO {
      * @return true si la inserción fue exitosa.
      */
     public boolean insertarVuelo(Vuelo vuelo) {
-        String sql = "INSERT INTO vuelos (matricula, idPiloto, fechaSalida, fechaRegreso, estado) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO vuelos (matricula, idPiloto, fechaSalida, fechaRegreso, estado, origen, destino) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, vuelo.getMatricula());
@@ -29,9 +29,11 @@ public class VueloDAO {
             stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
             stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaRegreso()));
             stmt.setString(5, vuelo.getEstado());
+            stmt.setString(6, vuelo.getOrigen());
+            stmt.setString(7, vuelo.getDestino());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al insertar vuelo", e);
             return false;
         }
     }
@@ -47,7 +49,7 @@ public class VueloDAO {
     public List<Vuelo> obtenerVuelosPorPiloto(int idPiloto) {
         List<Vuelo> lista = new ArrayList<>();
         String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, a.modelo AS modeloAvion " +
+                "v.estado, v.origen, v.destino, a.modelo AS modeloAvion " +
                 "FROM vuelos v " +
                 "INNER JOIN aviones a ON v.matricula = a.matricula " +
                 "WHERE v.idPiloto = ? " +
@@ -78,7 +80,7 @@ public class VueloDAO {
     public List<Vuelo> obtenerVuelosPorMatricula(String matricula) {
         List<Vuelo> lista = new ArrayList<>();
         String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, p.nombre AS nombrePiloto " +
+                "v.estado, v.origen, v.destino, p.nombre AS nombrePiloto " +
                 "FROM vuelos v " +
                 "INNER JOIN pilotos p ON v.idPiloto = p.idPiloto " +
                 "WHERE v.matricula = ? " +
@@ -108,14 +110,14 @@ public class VueloDAO {
     public List<Vuelo> obtenerTodosLosVuelos() {
         List<Vuelo> lista = new ArrayList<>();
         String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, p.nombre AS nombrePiloto, a.modelo AS modeloAvion " +
+                "v.estado, v.origen, v.destino, p.nombre AS nombrePiloto, a.modelo AS modeloAvion " +
                 "FROM vuelos v " +
                 "INNER JOIN pilotos p ON v.idPiloto = p.idPiloto " +
                 "INNER JOIN aviones a ON v.matricula = a.matricula " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 Vuelo v = mapearResultSet(rs);
                 v.setNombrePiloto(rs.getString("nombrePiloto"));
@@ -162,6 +164,25 @@ public class VueloDAO {
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
+            return false;
+        }
+    }
+
+    public boolean actualizarVuelo(Vuelo vuelo) {
+        String sql = "UPDATE vuelos SET matricula = ?, idPiloto = ?, fechaSalida = ?, fechaRegreso = ?, estado = ?, origen = ?, destino = ? WHERE idVuelo = ?";
+        try (Connection conn = ConexionBD.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, vuelo.getMatricula());
+            stmt.setInt(2, vuelo.getIdPiloto());
+            stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
+            stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaRegreso()));
+            stmt.setString(5, vuelo.getEstado());
+            stmt.setString(6, vuelo.getOrigen());
+            stmt.setString(7, vuelo.getDestino());
+            stmt.setInt(8, vuelo.getIdVuelo());
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al actualizar vuelo", e);
             return false;
         }
     }
@@ -217,6 +238,11 @@ public class VueloDAO {
         v.setMatricula(rs.getString("matricula"));
         v.setIdPiloto(rs.getInt("idPiloto"));
         v.setEstado(rs.getString("estado"));
+
+        try {
+            v.setOrigen(rs.getString("origen"));
+            v.setDestino(rs.getString("destino"));
+        } catch (SQLException ignored) {}
 
         Timestamp tsSalida = rs.getTimestamp("fechaSalida");
         if (tsSalida != null) v.setFechaSalida(tsSalida.toLocalDateTime());

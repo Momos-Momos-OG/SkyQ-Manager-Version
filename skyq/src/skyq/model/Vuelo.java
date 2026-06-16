@@ -15,6 +15,8 @@ public class Vuelo {
     private LocalDateTime fechaSalida;
     private LocalDateTime fechaRegreso;
     private String estado;          // 'Programado' | 'En Vuelo' | 'Completado' | 'Cancelado'
+    private String origen;
+    private String destino;
 
     // Campos auxiliares para joins (no mapeados directamente a columnas propias)
     private String nombrePiloto;
@@ -30,6 +32,21 @@ public class Vuelo {
         this.fechaSalida = fechaSalida;
         this.fechaRegreso = fechaRegreso;
         this.estado = estado;
+        this.origen = "";
+        this.destino = "";
+    }
+
+    public Vuelo(int idVuelo, String matricula, int idPiloto,
+                 LocalDateTime fechaSalida, LocalDateTime fechaRegreso, String estado,
+                 String origen, String destino) {
+        this.idVuelo = idVuelo;
+        this.matricula = matricula;
+        this.idPiloto = idPiloto;
+        this.fechaSalida = fechaSalida;
+        this.fechaRegreso = fechaRegreso;
+        this.estado = estado;
+        this.origen = origen;
+        this.destino = destino;
     }
 
     // --- Getters y Setters ---
@@ -51,6 +68,12 @@ public class Vuelo {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getOrigen() { return origen; }
+    public void setOrigen(String origen) { this.origen = origen; }
+
+    public String getDestino() { return destino; }
+    public void setDestino(String destino) { this.destino = destino; }
 
     public String getNombrePiloto() { return nombrePiloto; }
     public void setNombrePiloto(String nombrePiloto) { this.nombrePiloto = nombrePiloto; }

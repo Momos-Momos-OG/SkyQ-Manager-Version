@@ -104,5 +104,23 @@ public class MantenimientoDAO {
         }
         return false;
     }
+
+    public boolean estaEnMantenimiento(String matricula, java.util.Date fechaVuelo) {
+        String sql = "SELECT COUNT(*) FROM mantenimiento WHERE matricula = ? AND ? >= fechaInicio AND (? <= fechaFin OR fechaFin IS NULL)";
+        try (Connection conn = ConexionBD.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, matricula);
+            ps.setDate(2, new java.sql.Date(fechaVuelo.getTime()));
+            ps.setDate(3, new java.sql.Date(fechaVuelo.getTime()));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al verificar mantenimiento", e);
+        }
+        return false;
+    }
 }
 
