@@ -1,11 +1,10 @@
 package skyq.dao;
 
-import skyq.database.ConexionBD;
-import skyq.model.Equipaje;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import skyq.database.ConexionBD;
+import skyq.model.Equipaje;
 
 public class EquipajeDAO {
 
@@ -13,7 +12,7 @@ public class EquipajeDAO {
         String sql = "INSERT INTO equipaje (idPasajero, peso, estado) VALUES (?, ?, ?)";
 
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setInt(1, equipaje.getIdPasajero());
             statement.setDouble(2, equipaje.getPeso());

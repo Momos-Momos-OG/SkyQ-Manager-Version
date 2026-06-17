@@ -16,7 +16,8 @@ public class Pasajero {
     }
 
     // Constructor de 5 parámetros para compatibilidad con lógica previa
-    public Pasajero(int idPasajero, String nombre, String numAsiento, int nivelPrioridad, LocalDateTime timestampLlegada) {
+    public Pasajero(int idPasajero, String nombre, String numAsiento,
+                    int nivelPrioridad, LocalDateTime timestampLlegada) {
         this.idPasajero = idPasajero;
         this.nombre = nombre;
         this.numAsiento = numAsiento;
@@ -27,7 +28,9 @@ public class Pasajero {
     }
 
     // Constructor completo de 6 parámetros para el Dashboard Operativo
-    public Pasajero(int idPasajero, String nombre, String numAsiento, int nivelPrioridad, LocalDateTime timestampLlegada, String matricula) {
+    public Pasajero(int idPasajero, String nombre, String numAsiento,
+                    int nivelPrioridad, LocalDateTime timestampLlegada,
+                    String matricula) {
         this.idPasajero = idPasajero;
         this.nombre = nombre;
         this.numAsiento = numAsiento;

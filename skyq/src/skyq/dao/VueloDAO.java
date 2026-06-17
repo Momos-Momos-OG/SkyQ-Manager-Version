@@ -23,7 +23,7 @@ public class VueloDAO {
     public boolean insertarVuelo(Vuelo vuelo) {
         String sql = "INSERT INTO vuelos (matricula, idPiloto, fechaSalida, fechaRegreso, estado, origen, destino) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, vuelo.getMatricula());
             stmt.setInt(2, vuelo.getIdPiloto());
             stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
@@ -55,7 +55,7 @@ public class VueloDAO {
                 "WHERE v.idPiloto = ? " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idPiloto);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -86,7 +86,7 @@ public class VueloDAO {
                 "WHERE v.matricula = ? " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, matricula);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -116,8 +116,8 @@ public class VueloDAO {
                 "INNER JOIN aviones a ON v.matricula = a.matricula " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-              ResultSet rs = stmt.executeQuery()) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 Vuelo v = mapearResultSet(rs);
                 v.setNombrePiloto(rs.getString("nombrePiloto"));
@@ -140,7 +140,7 @@ public class VueloDAO {
     public boolean actualizarEstadoVuelo(int idVuelo, String nuevoEstado) {
         String sql = "UPDATE vuelos SET estado = ? WHERE idVuelo = ?";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, nuevoEstado);
             stmt.setInt(2, idVuelo);
             return stmt.executeUpdate() > 0;
@@ -159,7 +159,7 @@ public class VueloDAO {
     public boolean eliminarVuelo(int idVuelo) {
         String sql = "DELETE FROM vuelos WHERE idVuelo = ?";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idVuelo);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -171,7 +171,7 @@ public class VueloDAO {
     public boolean actualizarVuelo(Vuelo vuelo) {
         String sql = "UPDATE vuelos SET matricula = ?, idPiloto = ?, fechaSalida = ?, fechaRegreso = ?, estado = ?, origen = ?, destino = ? WHERE idVuelo = ?";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, vuelo.getMatricula());
             stmt.setInt(2, vuelo.getIdPiloto());
             stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
@@ -197,7 +197,7 @@ public class VueloDAO {
     public boolean pilotoTieneVueloActivo(int idPiloto) {
         String sql = "SELECT COUNT(*) FROM vuelos WHERE idPiloto = ? AND estado IN ('En Vuelo', 'Programado')";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idPiloto);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -220,7 +220,7 @@ public class VueloDAO {
     public boolean avionTieneVueloActivo(String matricula) {
         String sql = "SELECT COUNT(*) FROM vuelos WHERE matricula = ? AND estado IN ('En Vuelo', 'Programado')";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, matricula);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

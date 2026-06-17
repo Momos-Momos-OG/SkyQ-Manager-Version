@@ -10,14 +10,16 @@ public class SesionManager {
     }
 
     public static SesionManager getInstance() {
-        if (instancia == null) {
+        SesionManager instanciaLocal = SesionManager.instancia;
+        if (instanciaLocal == null) {
             synchronized (SesionManager.class) {
-                if (instancia == null) {
-                    instancia = new SesionManager();
+                instanciaLocal = SesionManager.instancia;
+                if (instanciaLocal == null) {
+                    SesionManager.instancia = instanciaLocal = new SesionManager();
                 }
             }
         }
-        return instancia;
+        return instanciaLocal;
     }
 
     public void setUsuarioActual(Usuario usuario) {

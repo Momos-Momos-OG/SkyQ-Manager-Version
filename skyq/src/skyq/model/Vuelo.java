@@ -25,7 +25,8 @@ public class Vuelo {
     public Vuelo() {}
 
     public Vuelo(int idVuelo, String matricula, int idPiloto,
-                 LocalDateTime fechaSalida, LocalDateTime fechaRegreso, String estado) {
+                LocalDateTime fechaSalida, LocalDateTime fechaRegreso,
+                String estado) {
         this.idVuelo = idVuelo;
         this.matricula = matricula;
         this.idPiloto = idPiloto;
@@ -37,8 +38,8 @@ public class Vuelo {
     }
 
     public Vuelo(int idVuelo, String matricula, int idPiloto,
-                 LocalDateTime fechaSalida, LocalDateTime fechaRegreso, String estado,
-                 String origen, String destino) {
+                LocalDateTime fechaSalida, LocalDateTime fechaRegreso,
+                String estado, String origen, String destino) {
         this.idVuelo = idVuelo;
         this.matricula = matricula;
         this.idPiloto = idPiloto;

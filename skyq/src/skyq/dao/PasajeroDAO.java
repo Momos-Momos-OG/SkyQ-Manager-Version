@@ -1,8 +1,5 @@
 package skyq.dao;
 
-import skyq.database.ConexionBD;
-import skyq.model.Pasajero;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,13 +9,15 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import skyq.database.ConexionBD;
+import skyq.model.Pasajero;
 
 public class PasajeroDAO {
 
     public boolean insertarPasajero(Pasajero pasajero) {
         String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pasajero.getNombre());
             statement.setString(2, pasajero.getNumAsiento());
             statement.setInt(3, pasajero.getNivelPrioridad());
@@ -46,7 +45,7 @@ public class PasajeroDAO {
     public int insertarPasajeroYObtenerId(Pasajero pasajero) {
         String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, pasajero.getNombre());
             statement.setString(2, pasajero.getNumAsiento());
             statement.setInt(3, pasajero.getNivelPrioridad());
@@ -81,7 +80,7 @@ public class PasajeroDAO {
     public Pasajero obtenerPasajeroPorPNR(String pnr) {
         String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero WHERE pnr = ?";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pnr);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -108,7 +107,7 @@ public class PasajeroDAO {
     public boolean realizarCheckIn(int idPasajero, String numAsiento, LocalDateTime timestampLlegada) {
         String sql = "UPDATE pasajero SET numAsiento = ?, timestampLlegada = ? WHERE idPasajero = ?";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+            PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, numAsiento);
             ps.setTimestamp(2, Timestamp.valueOf(timestampLlegada));
             ps.setInt(3, idPasajero);
@@ -124,8 +123,8 @@ public class PasajeroDAO {
         List<Pasajero> pasajeros = new ArrayList<>();
         String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero ORDER BY idPasajero";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
                 Pasajero p = new Pasajero();
                 p.setIdPasajero(resultSet.getInt("idPasajero"));
@@ -150,7 +149,7 @@ public class PasajeroDAO {
         List<Pasajero> pasajeros = new ArrayList<>();
         String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada FROM pasajero WHERE matricula = ? ORDER BY idPasajero";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
@@ -176,7 +175,7 @@ public class PasajeroDAO {
     public boolean verificarAsientoOcupado(String asiento) {
         String sql = "SELECT COUNT(*) FROM pasajero WHERE numAsiento = ?";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, asiento);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -192,7 +191,7 @@ public class PasajeroDAO {
     public boolean verificarAsientoOcupadoEnVuelo(String asiento, String matricula) {
         String sql = "SELECT COUNT(*) FROM pasajero WHERE numAsiento = ? AND matricula = ?";
         try (Connection connection = ConexionBD.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, asiento);
             statement.setString(2, matricula);
             try (ResultSet resultSet = statement.executeQuery()) {

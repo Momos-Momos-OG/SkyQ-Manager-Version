@@ -48,8 +48,8 @@ public final class VentanaPrincipal extends JFrame {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException
-                | UnsupportedLookAndFeelException ignored) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException ignored) {
+            
         }
 
         SwingUtilities.invokeLater(() -> new PantallaLogin().setVisible(true));

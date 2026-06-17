@@ -22,7 +22,7 @@ public class Hospedaje {
     public Hospedaje() {}
 
     public Hospedaje(int idHospedaje, int idPiloto, String hotel, String ciudad,
-                     LocalDateTime fechaIngreso, LocalDateTime fechaSalida) {
+                    LocalDateTime fechaIngreso, LocalDateTime fechaSalida) {
         this.idHospedaje = idHospedaje;
         this.idPiloto = idPiloto;
         this.hotel = hotel;

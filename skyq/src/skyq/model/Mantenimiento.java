@@ -13,8 +13,9 @@ public class Mantenimiento {
     public Mantenimiento() {
     }
 
-    public Mantenimiento(int idMantenimiento, String matricula, LocalDate fechaInicio,
-            LocalDate fechaFin, String descripcion, String estado) {
+    public Mantenimiento(int idMantenimiento, String matricula,
+                        LocalDate fechaInicio, LocalDate fechaFin,
+                        String descripcion, String estado) {
         this.idMantenimiento = idMantenimiento;
         this.matricula = matricula;
         this.fechaInicio = fechaInicio;

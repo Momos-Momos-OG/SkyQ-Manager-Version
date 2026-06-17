@@ -1,0 +1,79 @@
+<DataSourcesHistory>
+  <DataSourceFromHistory isRemovedFromProject="true">
+    <data-source source="LOCAL" name="SkyQ" uuid="09429958-ce2e-4b1f-b5d7-33a7cd7322da">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MSSQL" />
+      <driver-ref>sqlserver.ms</driver-ref>
+      <synchronize>true</synchronize>
+      <configured-by-url>true</configured-by-url>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:sqlserver://localhost:1433</jdbc-url>
+      <secret-storage>master_key</secret-storage>
+      <user-name>SkyQ</user-name>
+      <schema-mapping />
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </DataSourceFromHistory>
+  <DataSourceFromHistory isRemovedFromProject="true">
+    <data-source source="LOCAL" name="Microsoft SQL Server" uuid="eb46e767-bca5-4a2a-8074-a97468e4b0e8">
+      <database-info product="" version="" jdbc-version="" driver-name="" driver-version="" dbms="MSSQL_LOCALDB" />
+      <driver-ref>sqlserver.ms</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:jtds:sqlserver://./</jdbc-url>
+      <secret-storage>master_key</secret-storage>
+      <schema-mapping />
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </DataSourceFromHistory>
+  <DataSourceFromHistory isRemovedFromProject="true">
+    <data-source source="LOCAL" name="SkyQ" uuid="9f770a95-deab-4e11-a276-768ee77d0019">
+      <database-info product="Microsoft SQL Server" version="17.00.4045" jdbc-version="4.3" driver-name="Microsoft JDBC Driver 13.2 for SQL Server" driver-version="13.2.1.0" dbms="MSSQL" exact-version="17.0.4045" exact-driver-version="13.2">
+        <extra-name-characters>$#@</extra-name-characters>
+        <identifier-quote-string>&quot;</identifier-quote-string>
+      </database-info>
+      <case-sensitivity plain-identifiers="mixed" quoted-identifiers="mixed" />
+      <driver-ref>sqlserver.ms</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:sqlserver://localhost:1433;database=skyq_db</jdbc-url>
+      <secret-storage>master_key</secret-storage>
+      <user-name>SA</user-name>
+      <schema-mapping>
+        <introspection-scope>
+          <node kind="database" qname="@">
+            <node kind="schema" qname="@" />
+          </node>
+        </introspection-scope>
+      </schema-mapping>
+      <working-dir>$ProjectFileDir$</working-dir>
+      <driver-properties>
+        <property name="encrypt" value="False" />
+        <property name="trustServerCertificate" value="false" />
+      </driver-properties>
+    </data-source>
+  </DataSourceFromHistory>
+  <DataSourceFromHistory isRemovedFromProject="false">
+    <data-source source="LOCAL" name="SkyQ" uuid="0d52a6c7-9e33-497d-9be5-0b71bb69d7ce">
+      <database-info product="Microsoft SQL Server" version="17.00.4045" jdbc-version="4.3" driver-name="Microsoft JDBC Driver 13.2 for SQL Server" driver-version="13.2.1.0" dbms="MSSQL" exact-version="17.0.4045" exact-driver-version="13.2">
+        <extra-name-characters>$#@</extra-name-characters>
+        <identifier-quote-string>&quot;</identifier-quote-string>
+      </database-info>
+      <case-sensitivity plain-identifiers="mixed" quoted-identifiers="mixed" />
+      <driver-ref>sqlserver.ms</driver-ref>
+      <synchronize>true</synchronize>
+      <configured-by-url>true</configured-by-url>
+      <jdbc-driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</jdbc-driver>
+      <jdbc-url>jdbc:sqlserver://localhost:1433;database=skyq_db</jdbc-url>
+      <secret-storage>master_key</secret-storage>
+      <user-name>SA</user-name>
+      <schema-mapping>
+        <introspection-scope>
+          <node kind="database" qname="@">
+            <node kind="schema" qname="@" />
+          </node>
+        </introspection-scope>
+      </schema-mapping>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </DataSourceFromHistory>
+</DataSourcesHistory>

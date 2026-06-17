@@ -4,10 +4,10 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class ConexionBD {
 
@@ -37,10 +37,10 @@ public class ConexionBD {
                 try (java.sql.Statement stmt = migrationConn.createStatement()) {
                     // Migración pasajero
                     stmt.execute("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.pasajero') AND name = 'pnr') " +
-                                 "BEGIN ALTER TABLE dbo.pasajero ADD pnr VARCHAR(20) NULL; END");
+                                "BEGIN ALTER TABLE dbo.pasajero ADD pnr VARCHAR(20) NULL; END");
                     // Migración vuelos (origen y destino)
                     stmt.execute("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.vuelos') AND name = 'origen') " +
-                                 "BEGIN ALTER TABLE dbo.vuelos ADD origen VARCHAR(100) NULL, destino VARCHAR(100) NULL; END");
+                                "BEGIN ALTER TABLE dbo.vuelos ADD origen VARCHAR(100) NULL, destino VARCHAR(100) NULL; END");
                 } catch (SQLException ex) {
                     skyq.logic.LoggerManager.getInstance().logError("Error ejecutando migración de esquema", ex);
                 }

@@ -1,10 +1,10 @@
 package skyq.dao;
 
-import skyq.database.ConexionBD;
-import skyq.model.Piloto;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import skyq.database.ConexionBD;
+import skyq.model.Piloto;
 
 public class PilotoDAO {
 
@@ -12,8 +12,8 @@ public class PilotoDAO {
         List<Piloto> lista = new ArrayList<>();
         String sql = "SELECT idPiloto, nombre, rango, estado FROM pilotos";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 lista.add(new Piloto(rs.getInt("idPiloto"), rs.getString("nombre"), rs.getString("rango"), rs.getString("estado")));
             }

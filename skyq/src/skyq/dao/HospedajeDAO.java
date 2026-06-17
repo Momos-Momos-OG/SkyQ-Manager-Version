@@ -1,11 +1,10 @@
 package skyq.dao;
 
-import skyq.database.ConexionBD;
-import skyq.model.Hospedaje;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import skyq.database.ConexionBD;
+import skyq.model.Hospedaje;
 
 /**
  * DAO para la tabla 'hospedaje_piloto'.
@@ -17,13 +16,13 @@ public class HospedajeDAO {
     /**
      * Registra un nuevo hospedaje para un piloto.
      *
-     * @param hospedaje Objeto con idPiloto, hotel, ciudad y fechas.
-     * @return true si el registro fue exitoso.
+     * Objeto con idPiloto, hotel, ciudad y fechas.
+     * Retorna true si el registro fue exitoso.
      */
     public boolean insertarHospedaje(Hospedaje hospedaje) {
         String sql = "INSERT INTO hospedaje_piloto (idPiloto, hotel, ciudad, fechaIngreso, fechaSalida) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, hospedaje.getIdPiloto());
             stmt.setString(2, hospedaje.getHotel());
             stmt.setString(3, hospedaje.getCiudad());
@@ -40,15 +39,15 @@ public class HospedajeDAO {
      * Obtiene todos los hospedajes registrados de un piloto específico.
      * Ordenados por fecha de ingreso descendente (el más reciente primero).
      *
-     * @param idPiloto ID del piloto a consultar.
-     * @return Lista de hospedajes del piloto.
+     * ID del piloto a consultar.
+     * Retorna la lista de hospedajes del piloto.
      */
     public List<Hospedaje> obtenerHospedajesPorPiloto(int idPiloto) {
         List<Hospedaje> lista = new ArrayList<>();
         String sql = "SELECT idHospedaje, idPiloto, hotel, ciudad, fechaIngreso, fechaSalida " +
                 "FROM hospedaje_piloto WHERE idPiloto = ? ORDER BY fechaIngreso DESC";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idPiloto);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -80,13 +79,13 @@ public class HospedajeDAO {
     /**
      * Elimina un registro de hospedaje por su ID.
      *
-     * @param idHospedaje ID del hospedaje a eliminar.
-     * @return true si la eliminación fue exitosa.
+     * ID del hospedaje a eliminar.
+     * retorna true si la eliminación fue exitosa.
      */
     public boolean eliminarHospedaje(int idHospedaje) {
         String sql = "DELETE FROM hospedaje_piloto WHERE idHospedaje = ?";
         try (Connection conn = ConexionBD.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, idHospedaje);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
