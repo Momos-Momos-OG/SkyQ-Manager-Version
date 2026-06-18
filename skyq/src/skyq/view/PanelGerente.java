@@ -27,7 +27,7 @@ import skyq.model.Vuelo;
  * Panel principal del Módulo A: Centro de Comando del Gerente.
  *
  * Arquitectura interna (CardLayout):
- * - PANTALLA_RADAR → PanelRadarView con animación de barrido
+ * - PANTALLA_RADAR → PanelListaAviones con cuadrícula adaptativa
  * - PANTALLA_DASHBOARD → Dashboard de 3 columnas:
  * Col 1: CRUD de aviones
  * Col 2: Diseñador de mapa de asientos
@@ -39,7 +39,7 @@ public final class PanelGerente extends JPanel {
     // ── Navegación principal ──
     private CardLayout cardNavigator;
     private JPanel mainDynamicContainer;
-    private PanelRadarView panelRadarView;
+    private PanelListaAviones panelRadarView;
     private JButton btnRadarView, btnRegistroView;
 
     // ── Formulario de aviones ──
@@ -94,7 +94,7 @@ public final class PanelGerente extends JPanel {
         mainDynamicContainer = new JPanel(cardNavigator);
         mainDynamicContainer.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
 
-        panelRadarView = new PanelRadarView();
+        panelRadarView = new PanelListaAviones();
         mainDynamicContainer.add(panelRadarView, "PANTALLA_RADAR");
         mainDynamicContainer.add(construirDashboard(), "PANTALLA_DASHBOARD");
         add(mainDynamicContainer, BorderLayout.CENTER);
@@ -179,7 +179,7 @@ public final class PanelGerente extends JPanel {
         btnRegistrarAvion.setForeground(EstiloUI.TEXTO_BLANCO);
         btnRegistrarAvion.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnRegistrarAvion.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnRegistrarAvion, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        EstiloUI.aplicarHover(btnRegistrarAvion, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
 
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 5, 6, 5);
@@ -316,7 +316,7 @@ public final class PanelGerente extends JPanel {
         btnNuevoPiloto.setForeground(EstiloUI.TEXTO_BLANCO);
         btnNuevoPiloto.setFont(new Font("SansSerif", Font.BOLD, 11));
         btnNuevoPiloto.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnNuevoPiloto, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
+        EstiloUI.aplicarHover(btnNuevoPiloto, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
 
         encabezado.add(lblTitulo, BorderLayout.WEST);
         encabezado.add(btnNuevoPiloto, BorderLayout.EAST);
@@ -437,10 +437,10 @@ public final class PanelGerente extends JPanel {
         JButton btnEliminar = crearBotonAccion("✕", EstiloUI.ROJO_ALERTA, "Eliminar piloto");
 
         // Hover effects
-        PanelRadarView.aplicarHover(btnEditar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
-        PanelRadarView.aplicarHover(btnVuelo, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
-        PanelRadarView.aplicarHover(btnHotel, new Color(120, 60, 180), new Color(140, 80, 200));
-        PanelRadarView.aplicarHover(btnEliminar, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
+        EstiloUI.aplicarHover(btnEditar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        EstiloUI.aplicarHover(btnVuelo, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        EstiloUI.aplicarHover(btnHotel, new Color(120, 60, 180), new Color(140, 80, 200));
+        EstiloUI.aplicarHover(btnEliminar, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
 
         accionesPanel.add(btnEditar);
         accionesPanel.add(btnVuelo);
@@ -821,7 +821,7 @@ public final class PanelGerente extends JPanel {
         formPanel.add(txtSalida, gbc);
 
         JButton btnRegistrar = crearBotonPrincipal("🏨  Registrar Hospedaje", new Color(120, 60, 180));
-        PanelRadarView.aplicarHover(btnRegistrar, new Color(120, 60, 180), new Color(140, 80, 200));
+        EstiloUI.aplicarHover(btnRegistrar, new Color(120, 60, 180), new Color(140, 80, 200));
         gbc.gridx = 0;
         gbc.gridy = 5;
         gbc.gridwidth = 2;
@@ -941,7 +941,7 @@ public final class PanelGerente extends JPanel {
                 fila.add(lblInfo, BorderLayout.CENTER);
 
                 JButton btnDel = crearBotonAccion("✕", EstiloUI.ROJO_ALERTA, "Eliminar hospedaje");
-                PanelRadarView.aplicarHover(btnDel, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
+                EstiloUI.aplicarHover(btnDel, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
                 fila.add(btnDel, BorderLayout.EAST);
 
                 btnDel.addActionListener(e -> {
@@ -1115,7 +1115,7 @@ public final class PanelGerente extends JPanel {
         btn.setFont(EstiloUI.FUENTE_COMPONENTE);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
-        PanelRadarView.aplicarHover(btn, color, color.brighter());
+        EstiloUI.aplicarHover(btn, color, color.brighter());
         return btn;
     }
 

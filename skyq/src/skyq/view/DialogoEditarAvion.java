@@ -60,7 +60,7 @@ public final class DialogoEditarAvion extends JDialog {
         btnActualizar.setForeground(EstiloUI.TEXTO_BLANCO);
         btnActualizar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnActualizar.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnActualizar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        EstiloUI.aplicarHover(btnActualizar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
         btnActualizar.addActionListener(e -> guardarCambios());
 
         JButton btnCancelar = new JButton("✕  Cancelar");
@@ -68,7 +68,7 @@ public final class DialogoEditarAvion extends JDialog {
         btnCancelar.setForeground(EstiloUI.TEXTO_BLANCO);
         btnCancelar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnCancelar.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnCancelar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        EstiloUI.aplicarHover(btnCancelar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
         btnCancelar.addActionListener(e -> dispose());
 
         panelBotones.add(btnActualizar);
@@ -156,7 +156,7 @@ public final class DialogoEditarAvion extends JDialog {
         btnEditarAsientos.setForeground(EstiloUI.TEXTO_BLANCO);
         btnEditarAsientos.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnEditarAsientos.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnEditarAsientos, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.darker());
+        EstiloUI.aplicarHover(btnEditarAsientos, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.darker());
         btnEditarAsientos.addActionListener(e -> abrirEditorAsientos());
         gbc.gridx = 0;
         gbc.gridy = 4;
@@ -180,14 +180,14 @@ public final class DialogoEditarAvion extends JDialog {
         btnRegistrarManto.setBackground(new Color(255, 152, 0));
         btnRegistrarManto.setForeground(EstiloUI.TEXTO_BLANCO);
         btnRegistrarManto.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnRegistrarManto, new Color(255, 152, 0), new Color(255, 152, 0).darker());
+        EstiloUI.aplicarHover(btnRegistrarManto, new Color(255, 152, 0), new Color(255, 152, 0).darker());
         btnRegistrarManto.addActionListener(e -> abrirDialogoMantenimiento());
 
         btnVerManto = new JButton("📋  Ver Historial");
         btnVerManto.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
         btnVerManto.setForeground(EstiloUI.TEXTO_BLANCO);
         btnVerManto.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnVerManto, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        EstiloUI.aplicarHover(btnVerManto, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
 
         panelBotones.add(btnRegistrarManto);
         panelBotones.add(btnVerManto);
@@ -235,7 +235,7 @@ public final class DialogoEditarAvion extends JDialog {
         btnEditar.setForeground(EstiloUI.TEXTO_BLANCO);
         btnEditar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnEditar.setBorderPainted(false);
-        PanelRadarView.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        EstiloUI.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
         btnEditar.addActionListener(e -> {
             String distActual = confDAO.obtenerDistribucion(avion.getMatricula());
             String distSeleccionada;

@@ -8,6 +8,7 @@ import skyq.model.Avion;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public final class MapaAsientosPanel extends JPanel {
@@ -16,14 +17,26 @@ public final class MapaAsientosPanel extends JPanel {
     private final String matriculaAvion;
     private final transient AsientoSeleccionadoListener listener;
     private final transient PasajeroDAO pasajeroDAO;
+    
+    private boolean multiSelect = false;
+    private int limiteSeleccion = 0;
+    private final List<String> asientosSeleccionados = new ArrayList<>();
     private JToggleButton asientoSeleccionadoActual = null;
+
+    private static final Color COLOR_OCUPADO = new Color(110, 80, 80); // Gris/Rojo tenue
 
     public interface AsientoSeleccionadoListener {
         void onAsientoSeleccionado(String codigoAsiento);
     }
 
     public MapaAsientosPanel(String matriculaAvion, AsientoSeleccionadoListener listener) {
+        this(matriculaAvion, false, 0, listener);
+    }
+
+    public MapaAsientosPanel(String matriculaAvion, boolean multiSelect, int limiteSeleccion, AsientoSeleccionadoListener listener) {
         this.matriculaAvion = matriculaAvion;
+        this.multiSelect = multiSelect;
+        this.limiteSeleccion = limiteSeleccion;
         this.listener = listener;
         this.pasajeroDAO = new PasajeroDAO();
 
@@ -106,21 +119,43 @@ public final class MapaAsientosPanel extends JPanel {
                         btnAsiento.setPreferredSize(new Dimension(48, 26));
 
                         if (estaOcupado) {
-                            btnAsiento.setBackground(EstiloUI.ASIENTO_OCUPADO);
+                            btnAsiento.setBackground(COLOR_OCUPADO);
                             btnAsiento.setForeground(EstiloUI.TEXTO_MUTED);
                             btnAsiento.setEnabled(false);
                         } else {
-                            btnAsiento.setBackground(EstiloUI.VERDE_NEON);
+                            btnAsiento.setBackground(EstiloUI.VERDE_ESMERALDA);
                             btnAsiento.setForeground(EstiloUI.TEXTO_BLANCO);
-                            grupoAsientos.add(btnAsiento);
+                            
+                            if (!multiSelect) {
+                                grupoAsientos.add(btnAsiento);
+                            }
 
                             btnAsiento.addActionListener(e -> {
-                                if (asientoSeleccionadoActual != null) {
-                                    asientoSeleccionadoActual.setBackground(EstiloUI.VERDE_NEON);
+                                if (multiSelect) {
+                                    if (btnAsiento.isSelected()) {
+                                        if (limiteSeleccion > 0 && asientosSeleccionados.size() >= limiteSeleccion) {
+                                            btnAsiento.setSelected(false);
+                                            JOptionPane.showMessageDialog(this, 
+                                                    "Límite de selección alcanzado (" + limiteSeleccion + " asientos).", 
+                                                    "Información", JOptionPane.WARNING_MESSAGE);
+                                        } else {
+                                            asientosSeleccionados.add(codigoAsiento);
+                                            btnAsiento.setBackground(EstiloUI.AZUL_BRILLANTE);
+                                            listener.onAsientoSeleccionado(codigoAsiento);
+                                        }
+                                    } else {
+                                        asientosSeleccionados.remove(codigoAsiento);
+                                        btnAsiento.setBackground(EstiloUI.VERDE_ESMERALDA);
+                                        listener.onAsientoSeleccionado(codigoAsiento);
+                                    }
+                                } else {
+                                    if (asientoSeleccionadoActual != null) {
+                                        asientoSeleccionadoActual.setBackground(EstiloUI.VERDE_ESMERALDA);
+                                    }
+                                    btnAsiento.setBackground(EstiloUI.AZUL_BRILLANTE);
+                                    asientoSeleccionadoActual = btnAsiento;
+                                    listener.onAsientoSeleccionado(codigoAsiento);
                                 }
-                                btnAsiento.setBackground(EstiloUI.AZUL_ACCENT);
-                                asientoSeleccionadoActual = btnAsiento;
-                                listener.onAsientoSeleccionado(codigoAsiento);
                             });
                         }
                         rowPanel.add(btnAsiento);
@@ -153,19 +188,49 @@ public final class MapaAsientosPanel extends JPanel {
         add(scroll, BorderLayout.CENTER);
     }
 
+    public void setLimiteSeleccion(int limite) {
+        this.limiteSeleccion = limite;
+    }
+
+    public List<String> getAsientosSeleccionados() {
+        return asientosSeleccionados;
+    }
+
+    public void limpiarSeleccion() {
+        asientosSeleccionados.clear();
+        asientoSeleccionadoActual = null;
+        deseleccionarBotonesRecursivo(this);
+    }
+
+    private void deseleccionarBotonesRecursivo(Container container) {
+        for (Component comp : container.getComponents()) {
+            switch (comp) {
+                case JToggleButton btn -> {
+                    if (btn.isEnabled()) {
+                        btn.setSelected(false);
+                        btn.setBackground(EstiloUI.VERDE_ESMERALDA);
+                    }
+                }
+                case Container childContainer -> deseleccionarBotonesRecursivo(childContainer);
+                default -> {}
+            }
+        }
+    }
+
     public void setSeleccionBloqueada(boolean bloqueada) {
         deshabilitarBotonesRecursivo(this, !bloqueada);
     }
 
     private void deshabilitarBotonesRecursivo(Container container, boolean enabled) {
         for (Component comp : container.getComponents()) {
-            if (comp instanceof JToggleButton) {
-                // Solo habilitar si no es un asiento ocupado
-                if (comp.getBackground() != EstiloUI.ASIENTO_OCUPADO) {
-                    comp.setEnabled(enabled);
+            switch (comp) {
+                case JToggleButton btn -> {
+                    if (btn.getBackground() != COLOR_OCUPADO) {
+                        btn.setEnabled(enabled);
+                    }
                 }
-            } else if (comp instanceof Container childContainer) {
-                deshabilitarBotonesRecursivo(childContainer, enabled);
+                case Container childContainer -> deshabilitarBotonesRecursivo(childContainer, enabled);
+                default -> {}
             }
         }
     }

@@ -204,4 +204,32 @@ public class PasajeroDAO {
         }
         return false;
     }
+
+    public List<Pasajero> obtenerPasajerosPorPNRMult(String pnr) {
+        List<Pasajero> pasajeros = new ArrayList<>();
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero WHERE pnr = ? ORDER BY idPasajero";
+        try (Connection connection = ConexionBD.getConnection();
+            PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, pnr);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Pasajero p = new Pasajero();
+                    p.setIdPasajero(resultSet.getInt("idPasajero"));
+                    p.setNombre(resultSet.getString("nombre"));
+                    p.setNumAsiento(resultSet.getString("numAsiento"));
+                    p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
+                    p.setMatricula(resultSet.getString("matricula"));
+                    p.setPnr(pnr);
+                    Timestamp ts = resultSet.getTimestamp("timestampLlegada");
+                    if (ts != null) {
+                        p.setTimestampLlegada(ts.toLocalDateTime());
+                    }
+                    pasajeros.add(p);
+                }
+            }
+        } catch (SQLException e) {
+            skyq.logic.LoggerManager.getInstance().logError("Error SQL al obtener pasajeros por PNR múltiple", e);
+        }
+        return pasajeros;
+    }
 }

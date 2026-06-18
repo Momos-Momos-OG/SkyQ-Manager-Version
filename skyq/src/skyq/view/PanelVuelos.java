@@ -96,7 +96,7 @@ public final class PanelVuelos extends JPanel {
         btnRegistrar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnRegistrar.setBorderPainted(false);
         btnRegistrar.setFocusPainted(false);
-        PanelRadarView.aplicarHover(btnRegistrar, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
+        EstiloUI.aplicarHover(btnRegistrar, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
 
         JButton btnEditar = new JButton("EDITAR VUELO");
         btnEditar.setBackground(EstiloUI.AZUL_ACCENT);
@@ -104,7 +104,7 @@ public final class PanelVuelos extends JPanel {
         btnEditar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnEditar.setBorderPainted(false);
         btnEditar.setFocusPainted(false);
-        PanelRadarView.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
+        EstiloUI.aplicarHover(btnEditar, EstiloUI.AZUL_ACCENT, EstiloUI.AZUL_ACCENT.brighter());
 
         JButton btnEliminar = new JButton("ELIMINAR VUELO");
         btnEliminar.setBackground(EstiloUI.ROJO_ALERTA);
@@ -112,7 +112,7 @@ public final class PanelVuelos extends JPanel {
         btnEliminar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnEliminar.setBorderPainted(false);
         btnEliminar.setFocusPainted(false);
-        PanelRadarView.aplicarHover(btnEliminar, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
+        EstiloUI.aplicarHover(btnEliminar, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
 
         JButton btnLimpiar = new JButton("LIMPIAR");
         btnLimpiar.setBackground(EstiloUI.GRIS_BOTON_PASIVO);
@@ -120,7 +120,7 @@ public final class PanelVuelos extends JPanel {
         btnLimpiar.setFont(EstiloUI.FUENTE_COMPONENTE);
         btnLimpiar.setBorderPainted(false);
         btnLimpiar.setFocusPainted(false);
-        PanelRadarView.aplicarHover(btnLimpiar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
+        EstiloUI.aplicarHover(btnLimpiar, EstiloUI.GRIS_BOTON_PASIVO, new Color(55, 62, 71));
 
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 5, 6, 5);

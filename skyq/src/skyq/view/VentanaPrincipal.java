@@ -1,7 +1,12 @@
 package skyq.view;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -42,6 +47,35 @@ public final class VentanaPrincipal extends JFrame {
             tabbedPane.addTab("3. Programación de Vuelos", new PanelVuelos());
         }
 
+        // --- BARRA SUPERIOR DE SESIÓN ---
+        JPanel panelSesion = new JPanel(new BorderLayout());
+        panelSesion.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        panelSesion.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        JLabel lblUsuario = new JLabel("Sesión activa: " + (usuarioActual != null ? usuarioActual.getUsername() + " (" + usuarioActual.getRol() + ")" : "Anónimo"));
+        lblUsuario.setForeground(EstiloUI.TEXTO_MUTED);
+        lblUsuario.setFont(EstiloUI.FUENTE_LABEL);
+
+        JButton btnCerrarSesion = new JButton("Cerrar Sesión");
+        btnCerrarSesion.setBackground(EstiloUI.ROJO_ALERTA);
+        btnCerrarSesion.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnCerrarSesion.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnCerrarSesion.setFocusPainted(false);
+        btnCerrarSesion.setBorder(BorderFactory.createCompoundBorder(EstiloUI.BORDE_COMPONENTE, BorderFactory.createEmptyBorder(5, 12, 5, 12)));
+        btnCerrarSesion.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        EstiloUI.aplicarHover(btnCerrarSesion, EstiloUI.ROJO_ALERTA, EstiloUI.ROJO_ALERTA.brighter());
+        
+        btnCerrarSesion.addActionListener(e -> {
+            SesionManager.getInstance().cerrarSesion();
+            new PantallaLogin().setVisible(true);
+            dispose();
+        });
+
+        panelSesion.add(lblUsuario, BorderLayout.WEST);
+        panelSesion.add(btnCerrarSesion, BorderLayout.EAST);
+
+        add(panelSesion, BorderLayout.NORTH);
         add(tabbedPane, BorderLayout.CENTER);
     }
 
