@@ -20,6 +20,7 @@ public final class PanelVentas extends JPanel {
     private JTextField txtNombrePasajero;
     private JComboBox<String> comboTipoPasajero;
     private JComboBox<String> comboClasePasajero;
+    private JCheckBox chkSillaRuedas, chkUpgrade;
     private JTable tablaPasajeros;
     private DefaultTableModel modeloTablaPasajeros;
     private JButton btnAgregarPasajero;
@@ -106,6 +107,16 @@ public final class PanelVentas extends JPanel {
         comboClasePasajero = new JComboBox<>(new String[]{"VIP", "Ejecutiva", "Económica"});
         estilizarCombo(comboClasePasajero);
 
+        chkSillaRuedas = new JCheckBox("♿ Necesidad Especial (Silla de Ruedas)");
+        chkSillaRuedas.setBackground(EstiloUI.FONDO_TARJETA);
+        chkSillaRuedas.setForeground(EstiloUI.TEXTO_BLANCO);
+        chkSillaRuedas.setFont(EstiloUI.FUENTE_LABEL);
+
+        chkUpgrade = new JCheckBox("⭐ Solicitar Ascenso de Clase (Upgrade)");
+        chkUpgrade.setBackground(EstiloUI.FONDO_TARJETA);
+        chkUpgrade.setForeground(EstiloUI.TEXTO_BLANCO);
+        chkUpgrade.setFont(EstiloUI.FUENTE_LABEL);
+
         btnAgregarPasajero = new JButton("✚ AGREGAR PASAJERO");
         btnAgregarPasajero.setBackground(EstiloUI.AZUL_ACCENT);
         btnAgregarPasajero.setForeground(EstiloUI.TEXTO_BLANCO);
@@ -124,11 +135,17 @@ public final class PanelVentas extends JPanel {
         gbc.gridx = 1; formAgregar.add(comboClasePasajero, gbc);
 
         gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        formAgregar.add(chkSillaRuedas, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2;
+        formAgregar.add(chkUpgrade, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
         gbc.insets = new Insets(10, 6, 6, 6);
         formAgregar.add(btnAgregarPasajero, gbc);
 
         // Tabla temporal
-        modeloTablaPasajeros = new DefaultTableModel(new Object[]{"Nombre", "Tipo", "Clase", "Asiento Pre-asignado"}, 0) {
+        modeloTablaPasajeros = new DefaultTableModel(new Object[]{"Nombre", "Tipo", "Clase", "Asiento Pre-asignado", "Silla Ruedas", "Upgrade"}, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -248,9 +265,13 @@ public final class PanelVentas extends JPanel {
 
         String tipo = (String) comboTipoPasajero.getSelectedItem();
         String clase = (String) comboClasePasajero.getSelectedItem();
+        boolean sillaRuedas = chkSillaRuedas.isSelected();
+        boolean upgrade = chkUpgrade.isSelected();
 
-        modeloTablaPasajeros.addRow(new Object[]{nombre, tipo, clase, ""});
+        modeloTablaPasajeros.addRow(new Object[]{nombre, tipo, clase, "", sillaRuedas ? "Sí" : "No", upgrade ? "Sí" : "No"});
         txtNombrePasajero.setText("");
+        chkSillaRuedas.setSelected(false);
+        chkUpgrade.setSelected(false);
 
         // Actualizar el límite en el plano
         if (planoRealTime != null) {
@@ -321,6 +342,8 @@ public final class PanelVentas extends JPanel {
             String nombre = (String) modeloTablaPasajeros.getValueAt(i, 0);
             String clase = (String) modeloTablaPasajeros.getValueAt(i, 2);
             String asiento = (String) modeloTablaPasajeros.getValueAt(i, 3);
+            boolean sillaRuedas = "Sí".equals(modeloTablaPasajeros.getValueAt(i, 4));
+            boolean upgrade = "Sí".equals(modeloTablaPasajeros.getValueAt(i, 5));
 
             // Mapeo de clase a prioridad (VIP -> 1, Ejecutiva -> 2, Económica -> 3)
             int prioridad = switch (clase) {
@@ -329,7 +352,7 @@ public final class PanelVentas extends JPanel {
                 default -> 3;
             };
 
-            Pasajero p = new Pasajero(0, nombre, asiento, prioridad, null, vuelo.getMatricula(), "");
+            Pasajero p = new Pasajero(0, nombre, asiento, prioridad, null, vuelo.getMatricula(), "", sillaRuedas, upgrade);
             pasajeros.add(p);
         }
 

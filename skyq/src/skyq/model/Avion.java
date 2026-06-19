@@ -5,12 +5,12 @@ public class Avion {
     private String matricula;
     private String modelo;
     private int capacidad;
-    private String estado;
+    private EstadoAvion estado;
 
     public Avion() {
     }
 
-    public Avion(String matricula, String modelo, int capacidad, String estado) {
+    public Avion(String matricula, String modelo, int capacidad, EstadoAvion estado) {
         this.matricula = matricula;
         this.modelo = modelo;
         this.capacidad = capacidad;
@@ -41,11 +41,11 @@ public class Avion {
         this.capacidad = capacidad;
     }
 
-    public String getEstado() {
+    public EstadoAvion getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(EstadoAvion estado) {
         this.estado = estado;
     }
 }

@@ -76,6 +76,14 @@ public class Vuelo {
     public String getDestino() { return destino; }
     public void setDestino(String destino) { this.destino = destino; }
 
+    public String getTipoVuelo() {
+        if ("Aeropuerto Local".equalsIgnoreCase(origen)) {
+            return "Salida";
+        } else {
+            return "Llegada";
+        }
+    }
+
     public String getNombrePiloto() { return nombrePiloto; }
     public void setNombrePiloto(String nombrePiloto) { this.nombrePiloto = nombrePiloto; }
 

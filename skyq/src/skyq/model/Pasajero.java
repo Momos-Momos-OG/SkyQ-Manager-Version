@@ -11,6 +11,8 @@ public class Pasajero {
     private LocalDateTime timestampLlegada;
     private String matricula; // Relación contextual con el avión
     private String pnr;       // Código de reserva PNR
+    private boolean sillaRuedas;
+    private boolean upgrade;
 
     public Pasajero() {
     }
@@ -25,6 +27,8 @@ public class Pasajero {
         this.timestampLlegada = timestampLlegada;
         this.matricula = "";
         this.pnr = "";
+        this.sillaRuedas = false;
+        this.upgrade = false;
     }
 
     // Constructor completo de 6 parámetros para el Dashboard Operativo
@@ -38,6 +42,8 @@ public class Pasajero {
         this.timestampLlegada = timestampLlegada;
         this.matricula = matricula;
         this.pnr = "";
+        this.sillaRuedas = false;
+        this.upgrade = false;
     }
 
     // Constructor completo de 7 parámetros para incluir el PNR
@@ -49,6 +55,21 @@ public class Pasajero {
         this.timestampLlegada = timestampLlegada;
         this.matricula = matricula;
         this.pnr = pnr;
+        this.sillaRuedas = false;
+        this.upgrade = false;
+    }
+
+    // Constructor con todos los campos incluyendo sillaRuedas y upgrade
+    public Pasajero(int idPasajero, String nombre, String numAsiento, int nivelPrioridad, LocalDateTime timestampLlegada, String matricula, String pnr, boolean sillaRuedas, boolean upgrade) {
+        this.idPasajero = idPasajero;
+        this.nombre = nombre;
+        this.numAsiento = numAsiento;
+        this.nivelPrioridad = nivelPrioridad;
+        this.timestampLlegada = timestampLlegada;
+        this.matricula = matricula;
+        this.pnr = pnr;
+        this.sillaRuedas = sillaRuedas;
+        this.upgrade = upgrade;
     }
 
     public int getIdPasajero() { return idPasajero; }
@@ -71,4 +92,10 @@ public class Pasajero {
 
     public String getPnr() { return pnr; }
     public void setPnr(String pnr) { this.pnr = pnr; }
+
+    public boolean isSillaRuedas() { return sillaRuedas; }
+    public void setSillaRuedas(boolean sillaRuedas) { this.sillaRuedas = sillaRuedas; }
+
+    public boolean isUpgrade() { return upgrade; }
+    public void setUpgrade(boolean upgrade) { this.upgrade = upgrade; }
 }

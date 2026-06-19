@@ -25,7 +25,7 @@ public final class PanelVuelos extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private JTextField txtOrigen, txtDestino, txtSalida, txtLlegada;
-    private JComboBox<String> comboAvion, comboPiloto, comboEstado;
+    private JComboBox<String> comboAvion, comboPiloto, comboEstado, comboTipoVuelo;
     private JTable tablaVuelos;
     private DefaultTableModel modeloTabla;
 
@@ -67,8 +67,29 @@ public final class PanelVuelos extends JPanel {
         lblTitle.setForeground(EstiloUI.TEXTO_BLANCO);
         lblTitle.setFont(EstiloUI.FUENTE_TITULO);
 
+        comboTipoVuelo = new JComboBox<>(new String[]{"Salida", "Llegada"});
+        estilizarCombo(comboTipoVuelo);
+
         txtOrigen = crearFieldEstilizado();
+        txtOrigen.setText("Aeropuerto Local");
+        txtOrigen.setEditable(false);
+        
         txtDestino = crearFieldEstilizado();
+        
+        comboTipoVuelo.addActionListener(e -> {
+            String tipo = (String) comboTipoVuelo.getSelectedItem();
+            if ("Salida".equals(tipo)) {
+                txtOrigen.setText("Aeropuerto Local");
+                txtOrigen.setEditable(false);
+                txtDestino.setText("");
+                txtDestino.setEditable(true);
+            } else {
+                txtDestino.setText("Aeropuerto Local");
+                txtDestino.setEditable(false);
+                txtOrigen.setText("");
+                txtOrigen.setEditable(true);
+            }
+        });
         
         txtSalida = crearFieldEstilizado();
         txtSalida.setText(DATE_PLACEHOLDER);
@@ -130,25 +151,28 @@ public final class PanelVuelos extends JPanel {
         formCard.add(lblTitle, g);
 
         g.gridwidth = 1;
-        g.gridx = 0; g.gridy = 1; formCard.add(crearLabel("Origen:"), g);
+        g.gridx = 0; g.gridy = 1; formCard.add(crearLabel("Tipo de Vuelo:"), g);
+        g.gridx = 1; formCard.add(comboTipoVuelo, g);
+
+        g.gridx = 0; g.gridy = 2; formCard.add(crearLabel("Origen:"), g);
         g.gridx = 1; formCard.add(txtOrigen, g);
 
-        g.gridx = 0; g.gridy = 2; formCard.add(crearLabel("Destino:"), g);
+        g.gridx = 0; g.gridy = 3; formCard.add(crearLabel("Destino:"), g);
         g.gridx = 1; formCard.add(txtDestino, g);
 
-        g.gridx = 0; g.gridy = 3; formCard.add(crearLabel("Fecha Salida:"), g);
+        g.gridx = 0; g.gridy = 4; formCard.add(crearLabel("Fecha Salida:"), g);
         g.gridx = 1; formCard.add(txtSalida, g);
 
-        g.gridx = 0; g.gridy = 4; formCard.add(crearLabel("Fecha Llegada:"), g);
+        g.gridx = 0; g.gridy = 5; formCard.add(crearLabel("Fecha Llegada:"), g);
         g.gridx = 1; formCard.add(txtLlegada, g);
 
-        g.gridx = 0; g.gridy = 5; formCard.add(crearLabel("Aeronave:"), g);
+        g.gridx = 0; g.gridy = 6; formCard.add(crearLabel("Aeronave:"), g);
         g.gridx = 1; formCard.add(comboAvion, g);
 
-        g.gridx = 0; g.gridy = 6; formCard.add(crearLabel("Piloto:"), g);
+        g.gridx = 0; g.gridy = 7; formCard.add(crearLabel("Piloto:"), g);
         g.gridx = 1; formCard.add(comboPiloto, g);
 
-        g.gridx = 0; g.gridy = 7; formCard.add(crearLabel("Estado:"), g);
+        g.gridx = 0; g.gridy = 8; formCard.add(crearLabel("Estado:"), g);
         g.gridx = 1; formCard.add(comboEstado, g);
 
         // Sub-panel de botones organizados
@@ -159,7 +183,7 @@ public final class PanelVuelos extends JPanel {
         panelBotones.add(btnEliminar);
         panelBotones.add(btnLimpiar);
 
-        g.gridx = 0; g.gridy = 8; g.gridwidth = 2;
+        g.gridx = 0; g.gridy = 9; g.gridwidth = 2;
         g.insets = new Insets(15, 5, 5, 5);
         formCard.add(panelBotones, g);
 
@@ -288,8 +312,19 @@ public final class PanelVuelos extends JPanel {
     }
 
     private void cargarVueloEnFormulario(Vuelo v) {
-        txtOrigen.setText(v.getOrigen());
-        txtDestino.setText(v.getDestino());
+        if ("Aeropuerto Local".equalsIgnoreCase(v.getOrigen())) {
+            comboTipoVuelo.setSelectedItem("Salida");
+            txtOrigen.setText("Aeropuerto Local");
+            txtOrigen.setEditable(false);
+            txtDestino.setText(v.getDestino());
+            txtDestino.setEditable(true);
+        } else {
+            comboTipoVuelo.setSelectedItem("Llegada");
+            txtDestino.setText("Aeropuerto Local");
+            txtDestino.setEditable(false);
+            txtOrigen.setText(v.getOrigen());
+            txtOrigen.setEditable(true);
+        }
         
         String salidaText;
         if (v.getFechaSalida() != null) {
@@ -534,8 +569,11 @@ public final class PanelVuelos extends JPanel {
     }
 
     private void limpiarCampos() {
-        txtOrigen.setText("");
+        comboTipoVuelo.setSelectedItem("Salida");
+        txtOrigen.setText("Aeropuerto Local");
+        txtOrigen.setEditable(false);
         txtDestino.setText("");
+        txtDestino.setEditable(true);
         txtSalida.setText(DATE_PLACEHOLDER);
         txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
         txtLlegada.setText(DATE_PLACEHOLDER);

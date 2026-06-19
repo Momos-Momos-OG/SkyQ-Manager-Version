@@ -15,7 +15,7 @@ import skyq.model.Pasajero;
 public class PasajeroDAO {
 
     public boolean insertarPasajero(Pasajero pasajero) {
-        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr, sillaRuedas, upgrade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pasajero.getNombre());
@@ -35,6 +35,8 @@ public class PasajeroDAO {
             }
             statement.setString(5, matriculaVal);
             statement.setString(6, pasajero.getPnr());
+            statement.setBoolean(7, pasajero.isSillaRuedas());
+            statement.setBoolean(8, pasajero.isUpgrade());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
@@ -43,7 +45,7 @@ public class PasajeroDAO {
     }
 
     public int insertarPasajeroYObtenerId(Pasajero pasajero) {
-        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr, sillaRuedas, upgrade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, pasajero.getNombre());
@@ -63,6 +65,8 @@ public class PasajeroDAO {
             }
             statement.setString(5, matriculaVal);
             statement.setString(6, pasajero.getPnr());
+            statement.setBoolean(7, pasajero.isSillaRuedas());
+            statement.setBoolean(8, pasajero.isUpgrade());
 
             if (statement.executeUpdate() > 0) {
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
@@ -78,7 +82,7 @@ public class PasajeroDAO {
     }
 
     public Pasajero obtenerPasajeroPorPNR(String pnr) {
-        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero WHERE pnr = ?";
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, sillaRuedas, upgrade FROM pasajero WHERE pnr = ?";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pnr);
@@ -91,6 +95,8 @@ public class PasajeroDAO {
                     p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                     p.setMatricula(resultSet.getString("matricula"));
                     p.setPnr(pnr);
+                    p.setSillaRuedas(resultSet.getBoolean("sillaRuedas"));
+                    p.setUpgrade(resultSet.getBoolean("upgrade"));
                     Timestamp ts = resultSet.getTimestamp("timestampLlegada");
                     if (ts != null) {
                         p.setTimestampLlegada(ts.toLocalDateTime());
@@ -118,10 +124,9 @@ public class PasajeroDAO {
         }
     }
 
-    // Método original global para evitar errores de compilación
     public List<Pasajero> obtenerPasajerosVuelo() {
         List<Pasajero> pasajeros = new ArrayList<>();
-        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero ORDER BY idPasajero";
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, sillaRuedas, upgrade FROM pasajero ORDER BY idPasajero";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql);
             ResultSet resultSet = statement.executeQuery()) {
@@ -132,6 +137,8 @@ public class PasajeroDAO {
                 p.setNumAsiento(resultSet.getString("numAsiento"));
                 p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                 p.setMatricula(resultSet.getString("matricula"));
+                p.setSillaRuedas(resultSet.getBoolean("sillaRuedas"));
+                p.setUpgrade(resultSet.getBoolean("upgrade"));
                 Timestamp ts = resultSet.getTimestamp("timestampLlegada");
                 if (ts != null) {
                     p.setTimestampLlegada(ts.toLocalDateTime());
@@ -144,10 +151,9 @@ public class PasajeroDAO {
         return pasajeros;
     }
 
-    // Método contextual para filtrar exclusivamente por la matrícula elegida
     public List<Pasajero> obtenerPasajerosPorVuelo(String matricula) {
         List<Pasajero> pasajeros = new ArrayList<>();
-        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada FROM pasajero WHERE matricula = ? ORDER BY idPasajero";
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, sillaRuedas, upgrade FROM pasajero WHERE matricula = ? ORDER BY idPasajero";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
@@ -159,6 +165,8 @@ public class PasajeroDAO {
                     p.setNumAsiento(resultSet.getString("numAsiento"));
                     p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                     p.setMatricula(matricula);
+                    p.setSillaRuedas(resultSet.getBoolean("sillaRuedas"));
+                    p.setUpgrade(resultSet.getBoolean("upgrade"));
                     Timestamp ts = resultSet.getTimestamp("timestampLlegada");
                     if (ts != null) {
                         p.setTimestampLlegada(ts.toLocalDateTime());
@@ -207,7 +215,7 @@ public class PasajeroDAO {
 
     public List<Pasajero> obtenerPasajerosPorPNRMult(String pnr) {
         List<Pasajero> pasajeros = new ArrayList<>();
-        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula FROM pasajero WHERE pnr = ? ORDER BY idPasajero";
+        String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, sillaRuedas, upgrade FROM pasajero WHERE pnr = ? ORDER BY idPasajero";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, pnr);
@@ -220,6 +228,8 @@ public class PasajeroDAO {
                     p.setNivelPrioridad(resultSet.getInt("nivelPrioridad"));
                     p.setMatricula(resultSet.getString("matricula"));
                     p.setPnr(pnr);
+                    p.setSillaRuedas(resultSet.getBoolean("sillaRuedas"));
+                    p.setUpgrade(resultSet.getBoolean("upgrade"));
                     Timestamp ts = resultSet.getTimestamp("timestampLlegada");
                     if (ts != null) {
                         p.setTimestampLlegada(ts.toLocalDateTime());

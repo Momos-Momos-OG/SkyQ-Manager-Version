@@ -28,11 +28,13 @@ public final class DialogoConfigurarCabina extends JDialog {
         this.matricula = matricula;
         this.distribucion = distribucion;
 
+        setUndecorated(true);
         getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
-        setSize(500, 320);
+        setSize(500, 356);
         setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(10, 10));
-        ((JPanel) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
+        setLayout(new BorderLayout());
+
+        add(new PanelBarraTitulo(this, "Configurar Cabina — " + matricula, false), BorderLayout.NORTH);
 
         parseDistribucion();
         initComponents();
@@ -44,11 +46,13 @@ public final class DialogoConfigurarCabina extends JDialog {
         this.matricula = matricula;
         this.distribucion = distribucion;
 
+        setUndecorated(true);
         getContentPane().setBackground(EstiloUI.FONDO_TARJETA);
-        setSize(500, 320);
+        setSize(500, 356);
         setLocationRelativeTo(parent);
-        setLayout(new BorderLayout(10, 10));
-        ((JPanel) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
+        setLayout(new BorderLayout());
+
+        add(new PanelBarraTitulo(this, "Configurar Cabina — " + matricula, false), BorderLayout.NORTH);
 
         parseDistribucion();
         initComponents();
@@ -101,8 +105,6 @@ public final class DialogoConfigurarCabina extends JDialog {
         spinEconFilas = new JSpinner(new SpinnerNumberModel(econFilas, 0, 100, 1));
         tabs.addTab("Económica", crearTabClase(txtEconDist, spinEconFilas));
 
-        add(tabs, BorderLayout.CENTER);
-
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         panelBotones.setBackground(EstiloUI.FONDO_TARJETA);
 
@@ -114,7 +116,15 @@ public final class DialogoConfigurarCabina extends JDialog {
 
         panelBotones.add(btnGuardar);
         panelBotones.add(btnCancelar);
-        add(panelBotones, BorderLayout.SOUTH);
+
+        // Contenedor interno con padding
+        JPanel contentWrap = new JPanel(new BorderLayout(10, 10));
+        contentWrap.setBackground(EstiloUI.FONDO_TARJETA);
+        contentWrap.setBorder(new EmptyBorder(15, 15, 15, 15));
+        contentWrap.add(tabs, BorderLayout.CENTER);
+        contentWrap.add(panelBotones, BorderLayout.SOUTH);
+
+        add(contentWrap, BorderLayout.CENTER);
     }
 
     private JPanel crearTabClase(JTextField txtDist, JSpinner spinFilas) {

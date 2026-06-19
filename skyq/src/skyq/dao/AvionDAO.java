@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import skyq.database.ConexionBD;
 import skyq.model.Avion;
+import skyq.model.EstadoAvion;
 
 public class AvionDAO {
 
@@ -18,7 +19,7 @@ public class AvionDAO {
             statement.setString(1, avion.getMatricula());
             statement.setString(2, avion.getModelo());
             statement.setInt(3, avion.getCapacidad());
-            statement.setString(4, avion.getEstado());
+            statement.setString(4, avion.getEstado().name());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
             skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
@@ -53,7 +54,7 @@ public class AvionDAO {
                         resultSet.getString("matricula"),
                         resultSet.getString("modelo"),
                         resultSet.getInt("capacidad"),
-                        resultSet.getString("estado")
+                        EstadoAvion.valueOf(resultSet.getString("estado"))
                 ));
             }
         } catch (SQLException e) {
@@ -68,7 +69,7 @@ public class AvionDAO {
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, avion.getModelo());
             statement.setInt(2, avion.getCapacidad());
-            statement.setString(3, avion.getEstado());
+            statement.setString(3, avion.getEstado().name());
             statement.setString(4, avion.getMatricula());
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -90,14 +91,14 @@ public class AvionDAO {
         }
     }
 
-    public String obtenerEstado(String matricula) {
+    public EstadoAvion obtenerEstado(String matricula) {
         String sql = "SELECT estado FROM aviones WHERE matricula = ?";
         try (Connection connection = ConexionBD.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, matricula);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    return resultSet.getString("estado");
+                    return EstadoAvion.valueOf(resultSet.getString("estado"));
                 }
             }
         } catch (SQLException e) {

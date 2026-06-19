@@ -73,7 +73,7 @@ BEGIN
         matricula VARCHAR(20)  NOT NULL,
         modelo    VARCHAR(100) NOT NULL,
         capacidad INT          NOT NULL,
-        estado    VARCHAR(50)  NOT NULL,   -- 'Disponible' | 'En Vuelo' | 'En mantenimiento' | 'Fuera de servicio'
+        estado    VARCHAR(50)  NOT NULL,   -- 'EN_TERMINAL' | 'EN_VUELO' | 'EN_MANTENIMIENTO'
         CONSTRAINT PK_aviones PRIMARY KEY (matricula)
     );
 END;
@@ -109,6 +109,8 @@ BEGIN
         timestampLlegada DATETIME2     NULL,
         matricula        VARCHAR(20)   NOT NULL DEFAULT 'HC-BXA',  -- FK lógica hacia aviones
         pnr              VARCHAR(20)   NULL,
+        sillaRuedas      BIT           NOT NULL DEFAULT 0,
+        upgrade          BIT           NOT NULL DEFAULT 0,
         CONSTRAINT PK_pasajero PRIMARY KEY (idPasajero)
     );
 END;

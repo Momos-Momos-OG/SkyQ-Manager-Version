@@ -12,6 +12,7 @@ import skyq.logic.LoggerManager;
 import skyq.logic.SesionManager;
 import skyq.logic.ValidadorFormulario;
 import skyq.model.Avion;
+import skyq.model.EstadoAvion;
 import skyq.model.Mantenimiento;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,7 +21,7 @@ public final class DialogoEditarAvion extends JDialog {
     private static final long serialVersionUID = 1L;
     private transient Avion avion;
     private JTextField txtModelo, txtCapacidad;
-    private JComboBox<String> cbEstado;
+    private JComboBox<EstadoAvion> cbEstado;
     private JTable tablaManto;
     private final JButton btnActualizar;
     private JButton btnEditarAsientos, btnRegistrarManto, btnVerManto;
@@ -29,10 +30,10 @@ public final class DialogoEditarAvion extends JDialog {
         super(padre, "✈  Editar Aeronave: " + avion.getMatricula(), true);
         this.avion = avion;
 
+        setUndecorated(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         getContentPane().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        setLayout(new BorderLayout(10, 10));
-        ((JPanel) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
+        setLayout(new BorderLayout());
 
         // Crear pestañas
         JTabbedPane tabs = new JTabbedPane();
@@ -48,8 +49,6 @@ public final class DialogoEditarAvion extends JDialog {
         tabs.addTab("📋  Información", crearPanelInformacion());
         tabs.addTab("🔧  Mantenimiento", crearPanelMantenimiento());
         tabs.addTab("📺  Asientos", crearPanelAsientos());
-
-        add(tabs, BorderLayout.CENTER);
 
         // Panel de botones inferiores
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
@@ -74,9 +73,17 @@ public final class DialogoEditarAvion extends JDialog {
         panelBotones.add(btnActualizar);
         panelBotones.add(btnCancelar);
 
-        add(panelBotones, BorderLayout.SOUTH);
+        // Contenedor con padding para el contenido interno
+        JPanel contentWrap = new JPanel(new BorderLayout(10, 10));
+        contentWrap.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        contentWrap.setBorder(new EmptyBorder(15, 15, 15, 15));
+        contentWrap.add(tabs, BorderLayout.CENTER);
+        contentWrap.add(panelBotones, BorderLayout.SOUTH);
 
-        setSize(500, 600);
+        add(new PanelBarraTitulo(this, "✈  Editar Aeronave: " + avion.getMatricula(), false), BorderLayout.NORTH);
+        add(contentWrap, BorderLayout.CENTER);
+
+        setSize(500, 636);
         setLocationRelativeTo(padre);
     }
 
@@ -142,7 +149,7 @@ public final class DialogoEditarAvion extends JDialog {
         gbc.gridy = 3;
         panel.add(lblEstado, gbc);
 
-        cbEstado = new JComboBox<>(new String[] { "Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio" });
+        cbEstado = new JComboBox<>(EstadoAvion.values());
         cbEstado.setSelectedItem(avion.getEstado());
         cbEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         cbEstado.setForeground(EstiloUI.TEXTO_BLANCO);
@@ -370,7 +377,7 @@ public final class DialogoEditarAvion extends JDialog {
         try {
             avion.setModelo(txtModelo.getText().trim());
             avion.setCapacidad(Integer.parseInt(txtCapacidad.getText().trim()));
-            avion.setEstado((String) cbEstado.getSelectedItem());
+            avion.setEstado((EstadoAvion) cbEstado.getSelectedItem());
 
             if (!ValidadorFormulario.esTextoValido(avion.getModelo())) {
                 JOptionPane.showMessageDialog(this, "Modelo inválido.", "Validación", JOptionPane.WARNING_MESSAGE);

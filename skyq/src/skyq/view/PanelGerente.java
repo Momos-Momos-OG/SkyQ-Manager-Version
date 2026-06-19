@@ -19,6 +19,7 @@ import skyq.logic.LoggerManager;
 import skyq.logic.SesionManager;
 import skyq.logic.ValidadorFormulario;
 import skyq.model.Avion;
+import skyq.model.EstadoAvion;
 import skyq.model.Hospedaje;
 import skyq.model.Piloto;
 import skyq.model.Vuelo;
@@ -44,7 +45,7 @@ public final class PanelGerente extends JPanel {
 
     // ── Formulario de aviones ──
     private JTextField txtMatricula, txtModelo, txtCapacidad;
-    private JComboBox<String> comboEstado;
+    private JComboBox<EstadoAvion> comboEstado;
     private JTextArea txtDescripcion;
     private JButton btnRegistrarAvion;
 
@@ -78,7 +79,7 @@ public final class PanelGerente extends JPanel {
         sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(48, 54, 61)));
         sidebar.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 25));
 
-        btnRadarView = new JButton("✈  Radar");
+        btnRadarView = new JButton("✈  Terminal");
         btnRegistroView = new JButton("⚙  Registro");
         JButton btnAuditoria = new JButton("📊  Auditoría");
         aplicarEstiloBotonMenu(btnRadarView, true);
@@ -168,8 +169,7 @@ public final class PanelGerente extends JPanel {
         txtDescripcion.setBorder(EstiloUI.BORDE_COMPONENTE);
         txtDescripcion.setLineWrap(true);
 
-        comboEstado = new JComboBox<>(
-                new String[] { "Disponible", "En Vuelo", "En mantenimiento", "Fuera de servicio" });
+        comboEstado = new JComboBox<>(EstadoAvion.values());
         comboEstado.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         comboEstado.setForeground(EstiloUI.TEXTO_BLANCO);
         comboEstado.setBorder(EstiloUI.BORDE_COMPONENTE);
@@ -986,7 +986,7 @@ public final class PanelGerente extends JPanel {
         String matricula = txtMatricula.getText().trim();
         String modelo = txtModelo.getText().trim();
         String capacidadTexto = txtCapacidad.getText().trim();
-        String estado = (String) comboEstado.getSelectedItem();
+        EstadoAvion estado = (EstadoAvion) comboEstado.getSelectedItem();
 
         if (!ValidadorFormulario.esTextoValido(matricula)) {
             JOptionPane.showMessageDialog(this, "Ingrese una matrícula válida.", "Validación",

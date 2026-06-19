@@ -19,16 +19,20 @@ public final class PantallaLogin extends JFrame {
     }
 
     private void initComponents() {
+        setUndecorated(true);
         setTitle("SkyQ - Autenticación");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 350);
+        setSize(500, 310);
         setLocationRelativeTo(null);
         setResizable(false);
         setExtendedState(JFrame.NORMAL);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
+        setLayout(new BorderLayout());
+        add(new PanelBarraTitulo(this, "SkyQ - Autenticación", false), BorderLayout.NORTH);
+
+        JPanel mainPanel = new JPanel(new BorderLayout(20, 10));
         mainPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
-        mainPanel.setBorder(new EmptyBorder(40, 40, 40, 40));
+        mainPanel.setBorder(new EmptyBorder(10, 40, 10, 40));
 
         JPanel logoPanel = new JPanel();
         logoPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -50,10 +54,12 @@ public final class PantallaLogin extends JFrame {
         txtUsuario.setForeground(EstiloUI.TEXTO_BLANCO);
         txtUsuario.setFont(EstiloUI.FUENTE_LABEL);
         txtUsuario.setBorder(EstiloUI.BORDE_COMPONENTE);
+        txtUsuario.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        txtUsuario.addActionListener(e -> txtContrasena.requestFocusInWindow());
         formPanel.add(lblUsuario);
-        formPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(Box.createVerticalStrut(4));
         formPanel.add(txtUsuario);
-        formPanel.add(Box.createVerticalStrut(20));
+        formPanel.add(Box.createVerticalStrut(12));
 
         // Contraseña
         JLabel lblContrasena = new JLabel("Contraseña:");
@@ -64,10 +70,12 @@ public final class PantallaLogin extends JFrame {
         txtContrasena.setForeground(EstiloUI.TEXTO_BLANCO);
         txtContrasena.setFont(EstiloUI.FUENTE_LABEL);
         txtContrasena.setBorder(EstiloUI.BORDE_COMPONENTE);
+        txtContrasena.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        txtContrasena.addActionListener(e -> btnIngresar.doClick());
         formPanel.add(lblContrasena);
-        formPanel.add(Box.createVerticalStrut(5));
+        formPanel.add(Box.createVerticalStrut(4));
         formPanel.add(txtContrasena);
-        formPanel.add(Box.createVerticalStrut(30));
+        formPanel.add(Box.createVerticalStrut(18));
 
         // Botón
         btnIngresar = new JButton("INGRESAR");
@@ -79,7 +87,7 @@ public final class PantallaLogin extends JFrame {
         btnIngresar.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnIngresar.addActionListener(e -> autenticar());
         formPanel.add(btnIngresar);
-        formPanel.add(Box.createVerticalStrut(15));
+        formPanel.add(Box.createVerticalStrut(8));
 
         // Estado
         lblEstado = new JLabel("");
@@ -91,7 +99,7 @@ public final class PantallaLogin extends JFrame {
         mainPanel.add(logoPanel, BorderLayout.NORTH);
         mainPanel.add(formPanel, BorderLayout.CENTER);
 
-        add(mainPanel);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     private void autenticar() {

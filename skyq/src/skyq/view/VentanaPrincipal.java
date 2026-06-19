@@ -3,6 +3,7 @@ package skyq.view;
 import java.awt.BorderLayout;
 import java.awt.Cursor;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -24,6 +25,7 @@ public final class VentanaPrincipal extends JFrame {
     }
 
     private void initComponents() {
+        setUndecorated(true);
         setTitle("SkyQ - Consola Aeroportuaria de Control Integrado");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1300, 800);
@@ -75,7 +77,13 @@ public final class VentanaPrincipal extends JFrame {
         panelSesion.add(lblUsuario, BorderLayout.WEST);
         panelSesion.add(btnCerrarSesion, BorderLayout.EAST);
 
-        add(panelSesion, BorderLayout.NORTH);
+        // Contenedor norte para barra de título + barra de sesión
+        JPanel topContainer = new JPanel();
+        topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
+        topContainer.add(new PanelBarraTitulo(this, "SkyQ - Consola Aeroportuaria de Control Integrado", true));
+        topContainer.add(panelSesion);
+
+        add(topContainer, BorderLayout.NORTH);
         add(tabbedPane, BorderLayout.CENTER);
     }
 

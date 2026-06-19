@@ -36,7 +36,12 @@ public final class PanelListaAviones extends JPanel {
         gridPanel = new JPanel();
         gridPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
 
-        JScrollPane scroll = new JScrollPane(gridPanel);
+        // Contenedor intermedio que empuja el gridPanel al norte, evitando que se estiren las celdas verticalmente
+        JPanel wrapperPanel = new JPanel(new BorderLayout());
+        wrapperPanel.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
+        wrapperPanel.add(gridPanel, BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(wrapperPanel);
         scroll.getViewport().setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getVerticalScrollBar().setUnitIncrement(16);
@@ -64,7 +69,7 @@ public final class PanelListaAviones extends JPanel {
         if (width <= 0) {
             width = 800; // Ancho base de fallback
         }
-        int cardWidth = 230; // Ancho promedio de la tarjeta
+        int cardWidth = 240; // Ancho de tarjeta (220) + espacio
         int cols = Math.max(1, (width - 40) / cardWidth);
 
         gridPanel.setLayout(new GridLayout(0, cols, 20, 20));
@@ -80,23 +85,26 @@ public final class PanelListaAviones extends JPanel {
     private JPanel crearTarjetaAvion(Avion av) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(EstiloUI.FONDO_TARJETA);
+        card.setPreferredSize(new Dimension(220, 220));
+        card.setMinimumSize(new Dimension(220, 220));
+        card.setMaximumSize(new Dimension(220, 220));
         card.setBorder(BorderFactory.createCompoundBorder(
-                EstiloUI.BORDE_TARJETA, new EmptyBorder(12, 12, 12, 12)));
+                EstiloUI.BORDE_TARJETA, new EmptyBorder(10, 10, 10, 10)));
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Color según estado
+        // Mapeo exacto de colores según estado
         Color colorEstado;
         switch (av.getEstado()) {
-            case "Disponible" -> colorEstado = EstiloUI.VERDE_NEON;
-            case "En Vuelo" -> colorEstado = EstiloUI.AZUL_ACCENT;
-            case "En mantenimiento" -> colorEstado = new Color(250, 176, 5); // Naranja
-            default -> colorEstado = EstiloUI.ROJO_ALERTA;
+            case EN_TERMINAL -> colorEstado = EstiloUI.VERDE_ESMERALDA;
+            case EN_VUELO -> colorEstado = EstiloUI.AZUL_BRILLANTE;
+            case EN_MANTENIMIENTO -> colorEstado = EstiloUI.ROJO_ALERTA;
+            default -> colorEstado = EstiloUI.ASIENTO_OCUPADO;
         }
 
         // Header decorativo con icono
         JPanel visualHeader = new JPanel(new BorderLayout());
         visualHeader.setBackground(new Color(13, 17, 23));
-        visualHeader.setPreferredSize(new Dimension(150, 75));
+        visualHeader.setPreferredSize(new Dimension(150, 80));
         visualHeader.setBorder(EstiloUI.BORDE_COMPONENTE);
         
         JLabel lblIcono = new JLabel("✈", SwingConstants.CENTER);
@@ -117,20 +125,27 @@ public final class PanelListaAviones extends JPanel {
         lblMatricula.setFont(EstiloUI.FUENTE_SUBTITULO);
         lblMatricula.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblModelo = new JLabel(av.getModelo() + " (" + av.getCapacidad() + " pax)");
+        JLabel lblModelo = new JLabel(av.getModelo());
         lblModelo.setForeground(EstiloUI.TEXTO_MUTED);
         lblModelo.setFont(EstiloUI.FUENTE_LABEL);
         lblModelo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel lblEstado = new JLabel("● " + av.getEstado());
+        JLabel lblCapacidad = new JLabel("Capacidad: " + av.getCapacidad() + " pax");
+        lblCapacidad.setForeground(EstiloUI.TEXTO_MUTED);
+        lblCapacidad.setFont(EstiloUI.FUENTE_LABEL);
+        lblCapacidad.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lblEstado = new JLabel("Estado: " + av.getEstado());
         lblEstado.setForeground(colorEstado);
         lblEstado.setFont(new Font("SansSerif", Font.BOLD, 11));
         lblEstado.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         infoPanel.add(lblMatricula);
-        infoPanel.add(Box.createVerticalStrut(4));
+        infoPanel.add(Box.createVerticalStrut(3));
         infoPanel.add(lblModelo);
-        infoPanel.add(Box.createVerticalStrut(6));
+        infoPanel.add(Box.createVerticalStrut(3));
+        infoPanel.add(lblCapacidad);
+        infoPanel.add(Box.createVerticalStrut(4));
         infoPanel.add(lblEstado);
 
         card.add(infoPanel, BorderLayout.CENTER);
@@ -143,7 +158,7 @@ public final class PanelListaAviones extends JPanel {
                 infoPanel.setBackground(new Color(30, 36, 45));
                 card.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(new Color(56, 139, 253), 1),
-                        new EmptyBorder(12, 12, 12, 12)));
+                        new EmptyBorder(10, 10, 10, 10)));
             }
 
             @Override
@@ -151,7 +166,7 @@ public final class PanelListaAviones extends JPanel {
                 card.setBackground(EstiloUI.FONDO_TARJETA);
                 infoPanel.setBackground(EstiloUI.FONDO_TARJETA);
                 card.setBorder(BorderFactory.createCompoundBorder(
-                        EstiloUI.BORDE_TARJETA, new EmptyBorder(12, 12, 12, 12)));
+                        EstiloUI.BORDE_TARJETA, new EmptyBorder(10, 10, 10, 10)));
             }
 
             @Override

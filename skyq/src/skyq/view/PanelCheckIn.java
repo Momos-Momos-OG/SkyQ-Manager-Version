@@ -2,8 +2,6 @@ package skyq.view;
 
 import skyq.dao.AvionDAO;
 import skyq.dao.PasajeroDAO;
-import skyq.logic.ColaAbordaje;
-import skyq.logic.DesembarqueManager;
 import skyq.model.Avion;
 import skyq.model.Pasajero;
 import skyq.services.CheckInService;
@@ -71,8 +69,22 @@ public final class PanelCheckIn extends JPanel {
         comboVuelosFlota.setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         comboVuelosFlota.setForeground(EstiloUI.TEXTO_BLANCO);
 
+        JButton btnSimulador = new JButton("🚀 Abrir Simulador");
+        btnSimulador.setBackground(EstiloUI.VERDE_NEON);
+        btnSimulador.setForeground(EstiloUI.TEXTO_BLANCO);
+        btnSimulador.setFont(EstiloUI.FUENTE_COMPONENTE);
+        btnSimulador.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnSimulador.setFocusPainted(false);
+        btnSimulador.setBorderPainted(false);
+        EstiloUI.aplicarHover(btnSimulador, EstiloUI.VERDE_NEON, EstiloUI.VERDE_NEON.brighter());
+        btnSimulador.addActionListener(e -> {
+            DialogoSimuladorPuerta dialog = new DialogoSimuladorPuerta((Frame) SwingUtilities.getWindowAncestor(PanelCheckIn.this));
+            dialog.setVisible(true);
+        });
+
         panelNorteSeleccion.add(lblSelector);
         panelNorteSeleccion.add(comboVuelosFlota);
+        panelNorteSeleccion.add(btnSimulador);
         add(panelNorteSeleccion, BorderLayout.NORTH);
 
         // ==========================================
@@ -361,20 +373,29 @@ public final class PanelCheckIn extends JPanel {
     private void calcularColaAbordajeDinamica() {
         modeloTablaFlujo.setRowCount(0);
         List<Pasajero> base = pasajeroDAO.obtenerPasajerosPorVuelo(obtenerMatriculaActiva());
-        List<Pasajero> ordenados = new ColaAbordaje().organizarPasajeros(base);
+        java.util.PriorityQueue<Pasajero> cola = skyq.services.AbordajeService.crearColaAbordaje(base);
 
-        for (Pasajero p : ordenados) {
-            modeloTablaFlujo.addRow(new Object[]{p.getIdPasajero(), p.getNombre(), p.getNumAsiento(), p.getNivelPrioridad(), p.getTimestampLlegada()});
+        while (!cola.isEmpty()) {
+            Pasajero p = cola.poll();
+            String prioridadStr = (p.getNivelPrioridad() == 1 || p.isUpgrade()) ? "1 (VIP/Up)" : String.valueOf(p.getNivelPrioridad());
+            if (p.isSillaRuedas()) {
+                prioridadStr += " [♿]";
+            }
+            modeloTablaFlujo.addRow(new Object[]{p.getIdPasajero(), p.getNombre(), p.getNumAsiento(), prioridadStr, p.getTimestampLlegada()});
         }
     }
 
     private void calcularDesembarqueDinamico() {
         modeloTablaFlujo.setRowCount(0);
         List<Pasajero> base = pasajeroDAO.obtenerPasajerosPorVuelo(obtenerMatriculaActiva());
-        List<Pasajero> ordenados = new DesembarqueManager().ordenarPorAsiento(base);
+        List<Pasajero> ordenados = skyq.services.DesembarqueService.ordenarDesembarque(base);
 
         for (Pasajero p : ordenados) {
-            modeloTablaFlujo.addRow(new Object[]{p.getIdPasajero(), p.getNombre(), p.getNumAsiento(), p.getNivelPrioridad(), p.getTimestampLlegada()});
+            String prioridadStr = (p.getNivelPrioridad() == 1 || p.isUpgrade()) ? "1 (VIP/Up)" : String.valueOf(p.getNivelPrioridad());
+            if (p.isSillaRuedas()) {
+                prioridadStr += " [♿]";
+            }
+            modeloTablaFlujo.addRow(new Object[]{p.getIdPasajero(), p.getNombre(), p.getNumAsiento(), prioridadStr, p.getTimestampLlegada()});
         }
     }
 
