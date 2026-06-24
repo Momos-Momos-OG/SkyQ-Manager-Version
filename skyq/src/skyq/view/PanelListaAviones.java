@@ -17,6 +17,9 @@ public final class PanelListaAviones extends JPanel {
 
     private final transient AvionDAO avionDAO = new AvionDAO();
     private transient List<Avion> avionesFlota = new ArrayList<>();
+
+    // Timer de sincronización en tiempo real — 3 segundos, no bloquea el EDT
+    private final Timer timerSync = new Timer(3000, e -> recargarDatosAviones());
     private final JPanel gridPanel;
 
     public PanelListaAviones() {
@@ -56,6 +59,20 @@ public final class PanelListaAviones extends JPanel {
         });
 
         recargarDatosAviones();
+    }
+
+    /** Arranca el timer cuando el panel entra al árbol de componentes visible. */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        timerSync.start();
+    }
+
+    /** Detiene el timer cuando el panel deja de estar en el árbol (evita conexiones ociosas). */
+    @Override
+    public void removeNotify() {
+        timerSync.stop();
+        super.removeNotify();
     }
 
     public void recargarDatosAviones() {

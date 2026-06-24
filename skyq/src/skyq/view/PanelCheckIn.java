@@ -44,12 +44,29 @@ public final class PanelCheckIn extends JPanel {
     private final transient AvionDAO avionDAO = new AvionDAO();
     private final transient PasajeroDAO pasajeroDAO = new PasajeroDAO();
 
+    // Timer de sincronización en tiempo real — 3 segundos, no bloquea el EDT
+    private final Timer timerSync = new Timer(3000, e -> recargarVuelosDesdeFlota());
+
     public PanelCheckIn() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
         setBorder(new EmptyBorder(20, 20, 20, 20));
         setLayout(new BorderLayout(20, 20));
         initComponents();
         recargarVuelosDesdeFlota();
+    }
+
+    /** Arranca el timer al montar el panel. */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        timerSync.start();
+    }
+
+    /** Detiene el timer al desmontar el panel para liberar conexiones del pool. */
+    @Override
+    public void removeNotify() {
+        timerSync.stop();
+        super.removeNotify();
     }
 
     private void initComponents() {
@@ -346,15 +363,11 @@ public final class PanelCheckIn extends JPanel {
 
         try {
             CheckInService.realizarCheckIn(pasajeroCargado, peso);
-
             JOptionPane.showMessageDialog(this, "¡Pase de abordar emitido con éxito!", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            
-            // Refrescar tabla
-            String pnr = txtBuscarPNR.getText().trim().toUpperCase();
-            pasajerosPNR = pasajeroDAO.obtenerPasajerosPorPNRMult(pnr);
+            // Refrescar lista PNR tras el check-in
+            pasajerosPNR = pasajeroDAO.obtenerPasajerosPorPNRMult(txtBuscarPNR.getText().trim().toUpperCase());
             recargarTablaPasajerosPNR();
             limpiarCamposCheckIn();
-
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error al realizar check-in", JOptionPane.ERROR_MESSAGE);
         }

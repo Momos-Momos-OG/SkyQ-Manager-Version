@@ -274,9 +274,9 @@ public final class DialogoSimuladorPuerta extends JDialog {
         comboVuelos.removeAllItems();
         vuelosCargados = vueloDAO.obtenerTodosLosVuelos();
         for (Vuelo v : vuelosCargados) {
-            String modelo = v.getModeloAvion() != null ? v.getModeloAvion() : "Avión";
-            String fecha = v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "Sin fecha";
-            comboVuelos.addItem("Vuelo #" + v.getIdVuelo() + " — " + v.getMatricula() + " (" + modelo + ") — " + fecha);
+            comboVuelos.addItem("Vuelo #" + v.getIdVuelo() + " \u2014 " + v.getMatricula()
+                    + " (" + (v.getModeloAvion() != null ? v.getModeloAvion() : "Avión") + ") \u2014 "
+                    + (v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "Sin fecha"));
         }
         if (vuelosCargados.isEmpty()) {
             comboVuelos.addItem("No hay vuelos programados");

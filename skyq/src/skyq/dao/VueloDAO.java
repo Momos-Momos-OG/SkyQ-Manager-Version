@@ -8,26 +8,24 @@ import skyq.model.Vuelo;
 
 /**
  * DAO para la tabla 'vuelos'.
- * Compartido por las 3 aplicaciones del ecosistema SkyQ.
- * Maneja la asignación de pilotos a aviones y el ciclo de vida del vuelo.
+ * Aeropuerto Único - SRS v4.0: sin dependencia de pilotos.
  */
 public class VueloDAO {
 
     /**
      * Inserta un nuevo vuelo en la base de datos.
-     * Antes de llamar este método, verificar que el piloto y el avión estén disponibles.
      *
-     * @param vuelo Objeto Vuelo con matrícula, idPiloto, fechas y estado inicial.
+     * @param vuelo Objeto Vuelo con matrícula, codigoVuelo, fechas y estado inicial.
      * @return true si la inserción fue exitosa.
      */
     public boolean insertarVuelo(Vuelo vuelo) {
-        String sql = "INSERT INTO vuelos (matricula, idPiloto, fechaSalida, fechaRegreso, estado, origen, destino) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO vuelos (matricula, codigoVuelo, fechaSalida, fechaArribo, estado, origen, destino) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, vuelo.getMatricula());
-            stmt.setInt(2, vuelo.getIdPiloto());
+            stmt.setString(2, vuelo.getCodigoVuelo());
             stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
-            stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaRegreso()));
+            stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaArribo()));
             stmt.setString(5, vuelo.getEstado());
             stmt.setString(6, vuelo.getOrigen());
             stmt.setString(7, vuelo.getDestino());
@@ -39,50 +37,16 @@ public class VueloDAO {
     }
 
     /**
-     * Obtiene todos los vuelos asignados a un piloto específico,
-     * incluyendo el modelo del avión (join con tabla aviones).
-     * Usada por App Manager y App Piloto.
-     *
-     * @param idPiloto ID del piloto a consultar.
-     * @return Lista de vuelos del piloto ordenados por fecha de salida.
-     */
-    public List<Vuelo> obtenerVuelosPorPiloto(int idPiloto) {
-        List<Vuelo> lista = new ArrayList<>();
-        String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, v.origen, v.destino, a.modelo AS modeloAvion " +
-                "FROM vuelos v " +
-                "INNER JOIN aviones a ON v.matricula = a.matricula " +
-                "WHERE v.idPiloto = ? " +
-                "ORDER BY v.fechaSalida DESC";
-        try (Connection conn = ConexionBD.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, idPiloto);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Vuelo v = mapearResultSet(rs);
-                    v.setModeloAvion(rs.getString("modeloAvion"));
-                    lista.add(v);
-                }
-            }
-        } catch (SQLException e) {
-            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
-        }
-        return lista;
-    }
-
-    /**
      * Obtiene todos los vuelos asignados a una matrícula de avión específica.
-     * Usada por App Manager (verificar si un avión está ocupado).
      *
      * @param matricula Matrícula del avión.
      * @return Lista de vuelos del avión.
      */
     public List<Vuelo> obtenerVuelosPorMatricula(String matricula) {
         List<Vuelo> lista = new ArrayList<>();
-        String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, v.origen, v.destino, p.nombre AS nombrePiloto " +
+        String sql = "SELECT v.idVuelo, v.matricula, v.codigoVuelo, v.fechaSalida, v.fechaArribo, " +
+                "v.estado, v.origen, v.destino " +
                 "FROM vuelos v " +
-                "INNER JOIN pilotos p ON v.idPiloto = p.idPiloto " +
                 "WHERE v.matricula = ? " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
@@ -90,9 +54,7 @@ public class VueloDAO {
             stmt.setString(1, matricula);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    Vuelo v = mapearResultSet(rs);
-                    v.setNombrePiloto(rs.getString("nombrePiloto"));
-                    lista.add(v);
+                    lista.add(mapearResultSet(rs));
                 }
             }
         } catch (SQLException e) {
@@ -102,17 +64,15 @@ public class VueloDAO {
     }
 
     /**
-     * Obtiene todos los vuelos del sistema con información completa (join aviones + pilotos).
-     * Usada por el panel de timeline del Manager.
+     * Obtiene todos los vuelos del sistema con información del avión (join con aviones).
      *
      * @return Lista completa de vuelos.
      */
     public List<Vuelo> obtenerTodosLosVuelos() {
         List<Vuelo> lista = new ArrayList<>();
-        String sql = "SELECT v.idVuelo, v.matricula, v.idPiloto, v.fechaSalida, v.fechaRegreso, " +
-                "v.estado, v.origen, v.destino, p.nombre AS nombrePiloto, a.modelo AS modeloAvion " +
+        String sql = "SELECT v.idVuelo, v.matricula, v.codigoVuelo, v.fechaSalida, v.fechaArribo, " +
+                "v.estado, v.origen, v.destino, a.modelo AS modeloAvion " +
                 "FROM vuelos v " +
-                "INNER JOIN pilotos p ON v.idPiloto = p.idPiloto " +
                 "INNER JOIN aviones a ON v.matricula = a.matricula " +
                 "ORDER BY v.fechaSalida DESC";
         try (Connection conn = ConexionBD.getConnection();
@@ -120,7 +80,6 @@ public class VueloDAO {
             ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 Vuelo v = mapearResultSet(rs);
-                v.setNombrePiloto(rs.getString("nombrePiloto"));
                 v.setModeloAvion(rs.getString("modeloAvion"));
                 lista.add(v);
             }
@@ -131,7 +90,7 @@ public class VueloDAO {
     }
 
     /**
-     * Actualiza el estado de un vuelo (ej: 'Programado' → 'En Vuelo' → 'Completado').
+     * Actualiza el estado de un vuelo.
      *
      * @param idVuelo ID del vuelo a actualizar.
      * @param nuevoEstado Nuevo estado a asignar.
@@ -151,7 +110,7 @@ public class VueloDAO {
     }
 
     /**
-     * Elimina un vuelo del sistema (solo disponible para estado 'Programado' o 'Cancelado').
+     * Elimina un vuelo del sistema.
      *
      * @param idVuelo ID del vuelo a eliminar.
      * @return true si la eliminación fue exitosa.
@@ -168,14 +127,20 @@ public class VueloDAO {
         }
     }
 
+    /**
+     * Actualiza todos los campos editables de un vuelo.
+     *
+     * @param vuelo Vuelo con datos actualizados.
+     * @return true si la actualización fue exitosa.
+     */
     public boolean actualizarVuelo(Vuelo vuelo) {
-        String sql = "UPDATE vuelos SET matricula = ?, idPiloto = ?, fechaSalida = ?, fechaRegreso = ?, estado = ?, origen = ?, destino = ? WHERE idVuelo = ?";
+        String sql = "UPDATE vuelos SET matricula = ?, codigoVuelo = ?, fechaSalida = ?, fechaArribo = ?, estado = ?, origen = ?, destino = ? WHERE idVuelo = ?";
         try (Connection conn = ConexionBD.getConnection();
             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, vuelo.getMatricula());
-            stmt.setInt(2, vuelo.getIdPiloto());
+            stmt.setString(2, vuelo.getCodigoVuelo());
             stmt.setTimestamp(3, Timestamp.valueOf(vuelo.getFechaSalida()));
-            stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaRegreso()));
+            stmt.setTimestamp(4, Timestamp.valueOf(vuelo.getFechaArribo()));
             stmt.setString(5, vuelo.getEstado());
             stmt.setString(6, vuelo.getOrigen());
             stmt.setString(7, vuelo.getDestino());
@@ -188,31 +153,7 @@ public class VueloDAO {
     }
 
     /**
-     * Verifica si un piloto tiene algún vuelo en estado 'En Vuelo' o 'Programado'.
-     * Usado para bloquear reasignaciones conflictivas.
-     *
-     * @param idPiloto ID del piloto.
-     * @return true si el piloto tiene vuelos activos.
-     */
-    public boolean pilotoTieneVueloActivo(int idPiloto) {
-        String sql = "SELECT COUNT(*) FROM vuelos WHERE idPiloto = ? AND estado IN ('En Vuelo', 'Programado')";
-        try (Connection conn = ConexionBD.getConnection();
-            PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, idPiloto);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            skyq.logic.LoggerManager.getInstance().logError("Error SQL", e);
-        }
-        return false;
-    }
-
-    /**
      * Verifica si un avión tiene algún vuelo en estado activo.
-     * Usado antes de asignar un vuelo nuevo a una aeronave.
      *
      * @param matricula Matrícula del avión.
      * @return true si el avión está ocupado en un vuelo activo.
@@ -240,8 +181,11 @@ public class VueloDAO {
         Vuelo v = new Vuelo();
         v.setIdVuelo(rs.getInt("idVuelo"));
         v.setMatricula(rs.getString("matricula"));
-        v.setIdPiloto(rs.getInt("idPiloto"));
         v.setEstado(rs.getString("estado"));
+
+        try {
+            v.setCodigoVuelo(rs.getString("codigoVuelo"));
+        } catch (SQLException ignored) {}
 
         try {
             v.setOrigen(rs.getString("origen"));
@@ -253,9 +197,9 @@ public class VueloDAO {
             v.setFechaSalida(tsSalida.toLocalDateTime());
         }
 
-        Timestamp tsRegreso = rs.getTimestamp("fechaRegreso");
-        if (tsRegreso != null) {
-            v.setFechaRegreso(tsRegreso.toLocalDateTime());
+        Timestamp tsArribo = rs.getTimestamp("fechaArribo");
+        if (tsArribo != null) {
+            v.setFechaArribo(tsArribo.toLocalDateTime());
         }
 
         return v;

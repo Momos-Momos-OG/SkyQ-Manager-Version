@@ -3,13 +3,11 @@ package skyq.view;
 import skyq.dao.AuditoriaDAO;
 import skyq.dao.AvionDAO;
 import skyq.dao.MantenimientoDAO;
-import skyq.dao.PilotoDAO;
 import skyq.dao.VueloDAO;
 import skyq.dao.UsuarioDAO;
 import skyq.logic.LoggerManager;
 import skyq.logic.SesionManager;
 import skyq.model.Avion;
-import skyq.model.Piloto;
 import skyq.model.Vuelo;
 
 import javax.swing.*;
@@ -21,21 +19,24 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+/**
+ * Panel de Gestión de Vuelos del Aeropuerto Único (SRS v4.0).
+ * NOTA: La columna "Piloto" ha sido eliminada (Out of Scope).
+ * Se usa "Código de Vuelo" en su lugar (ej: "UIO-305", "GYE-820").
+ */
 public final class PanelVuelos extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    private JTextField txtOrigen, txtDestino, txtSalida, txtLlegada;
-    private JComboBox<String> comboAvion, comboPiloto, comboEstado, comboTipoVuelo;
+    private JTextField txtOrigen, txtDestino, txtSalida, txtLlegada, txtCodigoVuelo;
+    private JComboBox<String> comboAvion, comboEstado, comboTipoVuelo;
     private JTable tablaVuelos;
     private DefaultTableModel modeloTabla;
 
     private transient List<Avion> avionesFlota;
-    private transient List<Piloto> pilotosFlota;
     private transient List<Vuelo> vuelosProgramados;
 
     private final transient VueloDAO vueloDAO = new VueloDAO();
     private final transient AvionDAO avionDAO = new AvionDAO();
-    private final transient PilotoDAO pilotoDAO = new PilotoDAO();
     private final transient MantenimientoDAO mantenimientoDAO = new MantenimientoDAO();
     private final transient AuditoriaDAO auditoriaDAO = new AuditoriaDAO();
 
@@ -43,6 +44,9 @@ public final class PanelVuelos extends JPanel {
     private static final String DATE_PLACEHOLDER = "dd/MM/yyyy HH:mm";
 
     private transient Vuelo vueloSeleccionado = null;
+
+    // Timer de sincronización en tiempo real — 3 segundos, ejecuta en el EDT
+    private final Timer timerSync = new Timer(3000, e -> recargarTablaVuelos());
 
     public PanelVuelos() {
         setBackground(EstiloUI.FONDO_DARK_PRINCIPAL);
@@ -53,9 +57,23 @@ public final class PanelVuelos extends JPanel {
         recargarTablaVuelos();
     }
 
+    /** Arranca el timer cuando el panel se vuelve visible. */
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        timerSync.start();
+    }
+
+    /** Detiene el timer para no consumir conexiones del pool en segundo plano. */
+    @Override
+    public void removeNotify() {
+        timerSync.stop();
+        super.removeNotify();
+    }
+
     private void initComponents() {
         // ==========================================
-        // 🛫 PANEL SUPERIOR/IZQUIERDO: FORMULARIO
+        // 🛫 PANEL IZQUIERDO: FORMULARIO
         // ==========================================
         JPanel formCard = new JPanel(new GridBagLayout());
         formCard.setBackground(EstiloUI.FONDO_TARJETA);
@@ -90,6 +108,9 @@ public final class PanelVuelos extends JPanel {
                 txtOrigen.setEditable(true);
             }
         });
+
+        txtCodigoVuelo = crearFieldEstilizado();
+        txtCodigoVuelo.setToolTipText("Ej: UIO-305, GYE-820");
         
         txtSalida = crearFieldEstilizado();
         txtSalida.setText(DATE_PLACEHOLDER);
@@ -103,9 +124,6 @@ public final class PanelVuelos extends JPanel {
 
         comboAvion = new JComboBox<>();
         estilizarCombo(comboAvion);
-
-        comboPiloto = new JComboBox<>();
-        estilizarCombo(comboPiloto);
 
         comboEstado = new JComboBox<>(new String[]{"Programado", "En Vuelo", "Completado", "Cancelado"});
         estilizarCombo(comboEstado);
@@ -160,17 +178,17 @@ public final class PanelVuelos extends JPanel {
         g.gridx = 0; g.gridy = 3; formCard.add(crearLabel("Destino:"), g);
         g.gridx = 1; formCard.add(txtDestino, g);
 
-        g.gridx = 0; g.gridy = 4; formCard.add(crearLabel("Fecha Salida:"), g);
+        g.gridx = 0; g.gridy = 4; formCard.add(crearLabel("Código Vuelo:"), g);
+        g.gridx = 1; formCard.add(txtCodigoVuelo, g);
+
+        g.gridx = 0; g.gridy = 5; formCard.add(crearLabel("Fecha Salida:"), g);
         g.gridx = 1; formCard.add(txtSalida, g);
 
-        g.gridx = 0; g.gridy = 5; formCard.add(crearLabel("Fecha Llegada:"), g);
+        g.gridx = 0; g.gridy = 6; formCard.add(crearLabel("Fecha Llegada:"), g);
         g.gridx = 1; formCard.add(txtLlegada, g);
 
-        g.gridx = 0; g.gridy = 6; formCard.add(crearLabel("Aeronave:"), g);
+        g.gridx = 0; g.gridy = 7; formCard.add(crearLabel("Aeronave:"), g);
         g.gridx = 1; formCard.add(comboAvion, g);
-
-        g.gridx = 0; g.gridy = 7; formCard.add(crearLabel("Piloto:"), g);
-        g.gridx = 1; formCard.add(comboPiloto, g);
 
         g.gridx = 0; g.gridy = 8; formCard.add(crearLabel("Estado:"), g);
         g.gridx = 1; formCard.add(comboEstado, g);
@@ -187,16 +205,10 @@ public final class PanelVuelos extends JPanel {
         g.insets = new Insets(15, 5, 5, 5);
         formCard.add(panelBotones, g);
 
-        for (Component comp : formCard.getComponents()) {
-            if (comp instanceof JLabel && comp != lblTitle) {
-                comp.setForeground(EstiloUI.TEXTO_MUTED);
-                comp.setFont(EstiloUI.FUENTE_LABEL);
-            }
-        }
         add(formCard, BorderLayout.WEST);
 
         // ==========================================
-        // 🖥️ PANEL INFERIOR/DERECHO: TABLA
+        // 🖥️ PANEL CENTRAL: TABLA
         // ==========================================
         JPanel tableCard = new JPanel(new BorderLayout(10, 10));
         tableCard.setBackground(EstiloUI.FONDO_TARJETA);
@@ -208,7 +220,7 @@ public final class PanelVuelos extends JPanel {
         lblTableTitle.setFont(EstiloUI.FUENTE_SUBTITULO);
         tableCard.add(lblTableTitle, BorderLayout.NORTH);
 
-        String[] columnas = {"ID VUELO", "ORIGEN", "DESTINO", "AERONAVE", "PILOTO", "SALIDA", "LLEGADA", "ESTADO"};
+        String[] columnas = {"ID VUELO", "CÓDIGO", "ORIGEN", "DESTINO", "AERONAVE", "SALIDA", "LLEGADA", "ESTADO"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int r, int c) { return false; }
@@ -252,14 +264,7 @@ public final class PanelVuelos extends JPanel {
         comboAvion.removeAllItems();
         avionesFlota = avionDAO.obtenerAvionesFlota();
         for (Avion a : avionesFlota) {
-            // Mostrar todos los aviones pero identificar su estado
             comboAvion.addItem(a.getMatricula() + " - " + a.getModelo() + " (" + a.getEstado() + ")");
-        }
-
-        comboPiloto.removeAllItems();
-        pilotosFlota = pilotoDAO.obtenerPilotos();
-        for (Piloto p : pilotosFlota) {
-            comboPiloto.addItem(p.getNombre() + " (" + p.getRango() + ") [" + p.getEstado() + "]");
         }
     }
 
@@ -268,44 +273,20 @@ public final class PanelVuelos extends JPanel {
         vuelosProgramados = vueloDAO.obtenerTodosLosVuelos();
 
         for (Vuelo v : vuelosProgramados) {
-            String origenVal;
-            if (v.getOrigen() != null) {
-                origenVal = v.getOrigen();
-            } else {
-                origenVal = "—";
-            }
-            String destinoVal;
-            if (v.getDestino() != null) {
-                destinoVal = v.getDestino();
-            } else {
-                destinoVal = "—";
-            }
-            String pilotoVal;
-            if (v.getNombrePiloto() != null) {
-                pilotoVal = v.getNombrePiloto();
-            } else {
-                pilotoVal = "ID: " + v.getIdPiloto();
-            }
-            String salidaVal;
-            if (v.getFechaSalida() != null) {
-                salidaVal = v.getFechaSalida().format(FMT);
-            } else {
-                salidaVal = "—";
-            }
-            String regresoVal;
-            if (v.getFechaRegreso() != null) {
-                regresoVal = v.getFechaRegreso().format(FMT);
-            } else {
-                regresoVal = "—";
-            }
+            String origenVal   = (v.getOrigen() != null)  ? v.getOrigen()  : "—";
+            String destinoVal  = (v.getDestino() != null) ? v.getDestino() : "—";
+            String codigoVal   = (v.getCodigoVuelo() != null) ? v.getCodigoVuelo() : "—";
+            String salidaVal   = (v.getFechaSalida() != null) ? v.getFechaSalida().format(FMT) : "—";
+            String arriboVal   = (v.getFechaArribo() != null) ? v.getFechaArribo().format(FMT) : "—";
+
             modeloTabla.addRow(new Object[]{
                     v.getIdVuelo(),
+                    codigoVal,
                     origenVal,
                     destinoVal,
                     v.getMatricula(),
-                    pilotoVal,
                     salidaVal,
-                    regresoVal,
+                    arriboVal,
                     v.getEstado()
             });
         }
@@ -325,23 +306,14 @@ public final class PanelVuelos extends JPanel {
             txtOrigen.setText(v.getOrigen());
             txtOrigen.setEditable(true);
         }
+
+        txtCodigoVuelo.setText(v.getCodigoVuelo() != null ? v.getCodigoVuelo() : "");
+        txtCodigoVuelo.setForeground(EstiloUI.TEXTO_BLANCO);
         
-        String salidaText;
-        if (v.getFechaSalida() != null) {
-            salidaText = v.getFechaSalida().format(FMT);
-        } else {
-            salidaText = "";
-        }
-        txtSalida.setText(salidaText);
+        txtSalida.setText(v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "");
         txtSalida.setForeground(EstiloUI.TEXTO_BLANCO);
         
-        String llegadaText;
-        if (v.getFechaRegreso() != null) {
-            llegadaText = v.getFechaRegreso().format(FMT);
-        } else {
-            llegadaText = "";
-        }
-        txtLlegada.setText(llegadaText);
+        txtLlegada.setText(v.getFechaArribo() != null ? v.getFechaArribo().format(FMT) : "");
         txtLlegada.setForeground(EstiloUI.TEXTO_BLANCO);
 
         // Seleccionar avión correspondiente
@@ -352,20 +324,13 @@ public final class PanelVuelos extends JPanel {
             }
         }
 
-        // Seleccionar piloto correspondiente
-        for (int i = 0; i < pilotosFlota.size(); i++) {
-            if (pilotosFlota.get(i).getIdPiloto() == v.getIdPiloto()) {
-                comboPiloto.setSelectedIndex(i);
-                break;
-            }
-        }
-
         comboEstado.setSelectedItem(v.getEstado());
     }
 
     private void procesarGuardarVuelo() {
-        String origen = txtOrigen.getText().trim();
-        String destino = txtDestino.getText().trim();
+        String origen    = txtOrigen.getText().trim();
+        String destino   = txtDestino.getText().trim();
+        String codigo    = txtCodigoVuelo.getText().trim();
         String salidaStr = txtSalida.getText().trim();
         String llegadaStr = txtLlegada.getText().trim();
 
@@ -376,7 +341,7 @@ public final class PanelVuelos extends JPanel {
 
         LocalDateTime fechaSalida, fechaLlegada;
         try {
-            fechaSalida = LocalDateTime.parse(salidaStr, FMT);
+            fechaSalida  = LocalDateTime.parse(salidaStr, FMT);
             fechaLlegada = LocalDateTime.parse(llegadaStr, FMT);
             if (!fechaLlegada.isAfter(fechaSalida)) {
                 JOptionPane.showMessageDialog(this, "La llegada debe ser posterior a la salida.", "Validación", JOptionPane.WARNING_MESSAGE);
@@ -387,19 +352,17 @@ public final class PanelVuelos extends JPanel {
             return;
         }
 
-        if (comboAvion.getSelectedIndex() < 0 || comboPiloto.getSelectedIndex() < 0) {
-            JOptionPane.showMessageDialog(this, "Asegúrese de seleccionar avión y piloto.", "Validación", JOptionPane.WARNING_MESSAGE);
+        if (comboAvion.getSelectedIndex() < 0) {
+            JOptionPane.showMessageDialog(this, "Asegúrese de seleccionar una aeronave.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String matricula = avionesFlota.get(comboAvion.getSelectedIndex()).getMatricula();
-        int idPiloto = pilotosFlota.get(comboPiloto.getSelectedIndex()).getIdPiloto();
-        String estado = (String) comboEstado.getSelectedItem();
+        String estado    = (String) comboEstado.getSelectedItem();
 
         // Validar mantenimiento en fecha de salida
         java.util.Date dateSalida = java.sql.Timestamp.valueOf(fechaSalida);
-        boolean enManto = mantenimientoDAO.estaEnMantenimiento(matricula, dateSalida);
-        if (enManto) {
+        if (mantenimientoDAO.estaEnMantenimiento(matricula, dateSalida)) {
             JOptionPane.showMessageDialog(this,
                     "Registro denegado. La aeronave seleccionada se encuentra en mantenimiento durante la fecha de salida.",
                     "Conflicto Operativo",
@@ -407,17 +370,14 @@ public final class PanelVuelos extends JPanel {
             return;
         }
 
-        Vuelo nuevoVuelo = new Vuelo(0, matricula, idPiloto, fechaSalida, fechaLlegada, estado, origen, destino);
+        Vuelo nuevoVuelo = new Vuelo(0, matricula, codigo, fechaSalida, fechaLlegada, estado, origen, destino);
 
         if (vueloDAO.insertarVuelo(nuevoVuelo)) {
-            String user;
-            if (SesionManager.getInstance().getUsuarioActual() != null) {
-                user = SesionManager.getInstance().getUsuarioActual().getUsername();
-            } else {
-                user = "Sistema";
-            }
-            auditoriaDAO.registrarAccion(user, "REGISTRAR_VUELO", "Matrícula: " + matricula + ", Ruta: " + origen + " - " + destino);
-            LoggerManager.getInstance().logInfo("Vuelo registrado exitosamente para avión: " + matricula);
+            String user = SesionManager.getInstance().getUsuarioActual() != null
+                    ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Sistema";
+            auditoriaDAO.registrarAccion(user, "REGISTRAR_VUELO",
+                    "Código: " + codigo + ", Ruta: " + origen + " - " + destino);
+            LoggerManager.getInstance().logInfo("Vuelo registrado exitosamente: " + codigo + " [" + matricula + "]");
 
             JOptionPane.showMessageDialog(this, "Vuelo programado exitosamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             limpiarCampos();
@@ -435,16 +395,16 @@ public final class PanelVuelos extends JPanel {
 
         // Solicitud de autorización Manager Override
         String passwordGerente = solicitarPasswordAutorizacion();
-        if (passwordGerente == null) return; // Cancelado
+        if (passwordGerente == null) return;
 
         if (!UsuarioDAO.verificarPasswordGerente(passwordGerente)) {
             JOptionPane.showMessageDialog(this, "Autorización denegada. Contraseña incorrecta.", "Seguridad", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Validar formulario
-        String origen = txtOrigen.getText().trim();
-        String destino = txtDestino.getText().trim();
+        String origen    = txtOrigen.getText().trim();
+        String destino   = txtDestino.getText().trim();
+        String codigo    = txtCodigoVuelo.getText().trim();
         String salidaStr = txtSalida.getText().trim();
         String llegadaStr = txtLlegada.getText().trim();
 
@@ -455,7 +415,7 @@ public final class PanelVuelos extends JPanel {
 
         LocalDateTime fechaSalida, fechaLlegada;
         try {
-            fechaSalida = LocalDateTime.parse(salidaStr, FMT);
+            fechaSalida  = LocalDateTime.parse(salidaStr, FMT);
             fechaLlegada = LocalDateTime.parse(llegadaStr, FMT);
             if (!fechaLlegada.isAfter(fechaSalida)) {
                 JOptionPane.showMessageDialog(this, "La llegada debe ser posterior a la salida.", "Validación", JOptionPane.WARNING_MESSAGE);
@@ -467,13 +427,10 @@ public final class PanelVuelos extends JPanel {
         }
 
         String matricula = avionesFlota.get(comboAvion.getSelectedIndex()).getMatricula();
-        int idPiloto = pilotosFlota.get(comboPiloto.getSelectedIndex()).getIdPiloto();
-        String estado = (String) comboEstado.getSelectedItem();
+        String estado    = (String) comboEstado.getSelectedItem();
 
-        // Validar mantenimiento
         java.util.Date dateSalida = java.sql.Timestamp.valueOf(fechaSalida);
-        boolean enManto = mantenimientoDAO.estaEnMantenimiento(matricula, dateSalida);
-        if (enManto) {
+        if (mantenimientoDAO.estaEnMantenimiento(matricula, dateSalida)) {
             JOptionPane.showMessageDialog(this,
                     "Modificación denegada. La aeronave seleccionada se encuentra en mantenimiento durante la fecha de salida.",
                     "Conflicto Operativo",
@@ -482,21 +439,18 @@ public final class PanelVuelos extends JPanel {
         }
 
         vueloSeleccionado.setMatricula(matricula);
-        vueloSeleccionado.setIdPiloto(idPiloto);
+        vueloSeleccionado.setCodigoVuelo(codigo);
         vueloSeleccionado.setFechaSalida(fechaSalida);
-        vueloSeleccionado.setFechaRegreso(fechaLlegada);
+        vueloSeleccionado.setFechaArribo(fechaLlegada);
         vueloSeleccionado.setEstado(estado);
         vueloSeleccionado.setOrigen(origen);
         vueloSeleccionado.setDestino(destino);
 
         if (vueloDAO.actualizarVuelo(vueloSeleccionado)) {
-            String user;
-            if (SesionManager.getInstance().getUsuarioActual() != null) {
-                user = SesionManager.getInstance().getUsuarioActual().getUsername();
-            } else {
-                user = "Operario";
-            }
-            auditoriaDAO.registrarAccion(user, "EDITAR_VUELO", "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo() + ", Ruta: " + origen + " - " + destino);
+            String user = SesionManager.getInstance().getUsuarioActual() != null
+                    ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Operario";
+            auditoriaDAO.registrarAccion(user, "EDITAR_VUELO",
+                    "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo() + ", Ruta: " + origen + " - " + destino);
             LoggerManager.getInstance().logInfo("Vuelo ID: " + vueloSeleccionado.getIdVuelo() + " modificado bajo Manager Override.");
 
             JOptionPane.showMessageDialog(this, "Vuelo modificado exitosamente bajo supervisión.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -513,28 +467,25 @@ public final class PanelVuelos extends JPanel {
             return;
         }
 
-        // Solicitud de autorización Manager Override
         String passwordGerente = solicitarPasswordAutorizacion();
-        if (passwordGerente == null) return; // Cancelado
+        if (passwordGerente == null) return;
 
         if (!UsuarioDAO.verificarPasswordGerente(passwordGerente)) {
             JOptionPane.showMessageDialog(this, "Autorización denegada. Contraseña incorrecta.", "Seguridad", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, 
-                "¿Está seguro de eliminar de forma permanente el vuelo #" + vueloSeleccionado.getIdVuelo() + " (" + vueloSeleccionado.getOrigen() + " - " + vueloSeleccionado.getDestino() + ")?",
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Está seguro de eliminar de forma permanente el vuelo #" + vueloSeleccionado.getIdVuelo()
+                        + " (" + vueloSeleccionado.getOrigen() + " - " + vueloSeleccionado.getDestino() + ")?",
                 "Confirmar Eliminación", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             if (vueloDAO.eliminarVuelo(vueloSeleccionado.getIdVuelo())) {
-                String user;
-                if (SesionManager.getInstance().getUsuarioActual() != null) {
-                    user = SesionManager.getInstance().getUsuarioActual().getUsername();
-                } else {
-                    user = "Operario";
-                }
-                auditoriaDAO.registrarAccion(user, "ELIMINAR_VUELO", "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo());
+                String user = SesionManager.getInstance().getUsuarioActual() != null
+                        ? SesionManager.getInstance().getUsuarioActual().getUsername() : "Operario";
+                auditoriaDAO.registrarAccion(user, "ELIMINAR_VUELO",
+                        "Autorizó Gerente. Vuelo ID: " + vueloSeleccionado.getIdVuelo());
                 LoggerManager.getInstance().logInfo("Vuelo ID: " + vueloSeleccionado.getIdVuelo() + " eliminado bajo Manager Override.");
 
                 JOptionPane.showMessageDialog(this, "Vuelo eliminado del sistema.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
@@ -574,15 +525,13 @@ public final class PanelVuelos extends JPanel {
         txtOrigen.setEditable(false);
         txtDestino.setText("");
         txtDestino.setEditable(true);
+        txtCodigoVuelo.setText("");
         txtSalida.setText(DATE_PLACEHOLDER);
         txtSalida.setForeground(EstiloUI.TEXTO_MUTED);
         txtLlegada.setText(DATE_PLACEHOLDER);
         txtLlegada.setForeground(EstiloUI.TEXTO_MUTED);
         if (comboAvion.getItemCount() > 0) {
             comboAvion.setSelectedIndex(0);
-        }
-        if (comboPiloto.getItemCount() > 0) {
-            comboPiloto.setSelectedIndex(0);
         }
         comboEstado.setSelectedIndex(0);
         tablaVuelos.clearSelection();

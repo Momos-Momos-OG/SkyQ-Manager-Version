@@ -213,11 +213,11 @@ public final class PanelVentas extends JPanel {
         comboVuelos.removeAllItems();
         vuelosCargados = vueloDAO.obtenerTodosLosVuelos();
         for (Vuelo v : vuelosCargados) {
-            String modeloAvion = v.getModeloAvion() != null ? v.getModeloAvion() : "Avión";
-            String fechaSalidaStr = v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "Sin fecha";
-            String etiqueta = String.format("Vuelo #%d - %s (%s) - Salida: %s",
-                    v.getIdVuelo(), v.getMatricula(), modeloAvion, fechaSalidaStr);
-            comboVuelos.addItem(etiqueta);
+            comboVuelos.addItem(String.format("Vuelo #%d - %s (%s) - Salida: %s",
+                    v.getIdVuelo(),
+                    v.getMatricula(),
+                    v.getModeloAvion() != null ? v.getModeloAvion() : "Avión",
+                    v.getFechaSalida() != null ? v.getFechaSalida().format(FMT) : "Sin fecha"));
         }
         if (vuelosCargados.isEmpty()) {
             comboVuelos.addItem("No hay vuelos programados en el sistema");

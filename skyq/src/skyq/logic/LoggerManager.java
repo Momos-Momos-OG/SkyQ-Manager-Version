@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 public class LoggerManager {
-    private static volatile LoggerManager instancia;
     private static final Logger LOGGER = Logger.getLogger(LoggerManager.class.getName());
 
     private LoggerManager() {
@@ -21,16 +20,15 @@ public class LoggerManager {
         }
     }
 
-    public static LoggerManager getInstance() {
-        if (instancia == null) {
-            synchronized (LoggerManager.class) {
-                if (instancia == null) {
-                    instancia = new LoggerManager();
-                }
-            }
-        }
-        return instancia;
+    // La JVM garantiza que Holder se inicializa una sola vez (thread-safe sin synchronized)
+    private static final class Holder {
+        private static final LoggerManager INSTANCIA = new LoggerManager();
     }
+
+    public static LoggerManager getInstance() {
+        return Holder.INSTANCIA;
+    }
+
 
     public void logError(String contexto, Exception e) {
         String mensaje = String.format("[%s] %s: %s", contexto, e.getClass().getSimpleName(), e.getMessage());
