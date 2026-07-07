@@ -77,9 +77,3 @@ El proyecto está estructurado bajo los siguientes paquetes dentro de `skyq.src.
 
 ---
 
-## 📝 Normas de Documentación y Comentarios
-
-Para mantener consistencia y limpieza en el código fuente:
-*   **Idioma**: Todos los comentarios agregados al proyecto deben ser escritos estrictamente en **español**.
-*   **Formato de Javadocs**: No se permiten etiquetas como `@param` o `@return`. Las descripciones de los parámetros y del valor de retorno deben estar redactadas de forma descriptiva dentro del cuerpo del comentario Javadoc para mayor fluidez de lectura.
-

@@ -4,8 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import skyq.model.Pasajero;
 
+/**
+ * Servicio de desembarque de pasajeros.
+ * Utiliza el algoritmo de ordenamiento de burbuja (Bubble Sort)
+ * para simular el egreso de los pasajeros de adelante hacia atrás.
+ */
 public class DesembarqueService {
 
+    /**
+     * Ordena a los pasajeros para el proceso de desembarque de la aeronave.
+     * Aplica Bubble Sort manual para ordenar de forma ascendente por el número de fila.
+     */
     public static List<Pasajero> ordenarDesembarque(List<Pasajero> pasajeros) {
         if (pasajeros == null) {
             return new ArrayList<>();
