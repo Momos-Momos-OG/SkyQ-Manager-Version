@@ -12,8 +12,14 @@ import java.util.List;
 import skyq.database.ConexionBD;
 import skyq.model.Pasajero;
 
+/**
+ * DAO para la gestión de pasajeros en el sistema, incluyendo registro y consultas de PNR.
+ */
 public class PasajeroDAO {
 
+    /**
+     * Inserta un nuevo pasajero con toda su información en la base de datos.
+     */
     public boolean insertarPasajero(Pasajero pasajero) {
         String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr, sillaRuedas, upgrade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
@@ -44,6 +50,9 @@ public class PasajeroDAO {
         }
     }
 
+    /**
+     * Inserta un pasajero y devuelve el ID generado por la base de datos (llave subrogada autoincremental).
+     */
     public int insertarPasajeroYObtenerId(Pasajero pasajero) {
         String sql = "INSERT INTO pasajero (nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, pnr, sillaRuedas, upgrade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
@@ -81,6 +90,9 @@ public class PasajeroDAO {
         return -1;
     }
 
+    /**
+     * Recupera un pasajero específico buscando por su código de reserva PNR.
+     */
     public Pasajero obtenerPasajeroPorPNR(String pnr) {
         String sql = "SELECT idPasajero, nombre, numAsiento, nivelPrioridad, timestampLlegada, matricula, sillaRuedas, upgrade FROM pasajero WHERE pnr = ?";
         try (Connection connection = ConexionBD.getConnection();

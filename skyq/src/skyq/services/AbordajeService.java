@@ -37,8 +37,8 @@ public class AbordajeService {
     /**
      * Crea la cola de abordaje aplicando US-02 y US-03.
      *
-     * @param pasajeros Lista de pasajeros registrados en el vuelo (con check-in).
-     * @return PriorityQueue ordenada según reglas de prioridad del SRS.
+     * Pasajeros: Lista de pasajeros registrados en el vuelo (con check-in).
+     * Retorna: PriorityQueue ordenada según reglas de prioridad del SRS.
      */
     public static PriorityQueue<Pasajero> crearColaAbordaje(List<Pasajero> pasajeros) {
 
@@ -95,8 +95,8 @@ public class AbordajeService {
      * Si el PNR es null o individual (no compartido), el pasajero conserva
      * su propia prioridad original.
      *
-     * @param pasajeros Lista original de pasajeros.
-     * @return Lista con prioridades efectivas asignadas por grupo familiar.
+     * Pasajeros: Lista original de pasajeros.
+     * Retorna: Lista con prioridades efectivas asignadas por grupo familiar.
      */
     private static List<Pasajero> aplicarAgrupacionFamiliar(List<Pasajero> pasajeros) {
 

@@ -9,8 +9,14 @@ import java.util.List;
 import skyq.database.ConexionBD;
 import skyq.model.Equipaje;
 
+/**
+ * DAO para la gestión de la tabla 'equipaje' en la base de datos.
+ */
 public class EquipajeDAO {
 
+    /**
+     * Registra una nueva pieza de equipaje vinculada a un pasajero.
+     */
     public boolean registrarEquipaje(Equipaje equipaje) {
         String sql = "INSERT INTO equipaje (idPasajero, peso, estado) VALUES (?, ?, ?)";
 
@@ -28,6 +34,9 @@ public class EquipajeDAO {
         }
     }
 
+    /**
+     * Obtiene la lista de equipajes registrados para todos los pasajeros de un vuelo específico.
+     */
     public List<Equipaje> obtenerEquipajePorVuelo(String matricula) {
         List<Equipaje> lista = new ArrayList<>();
         String sql = "SELECT e.idMaleta, e.idPasajero, e.peso, e.estado " +

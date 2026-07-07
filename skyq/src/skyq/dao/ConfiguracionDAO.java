@@ -7,8 +7,14 @@ import java.sql.SQLException;
 import skyq.database.ConexionBD;
 import skyq.logic.LoggerManager;
 
+/**
+ * DAO para manejar las configuraciones de distribución de asientos de cada avión.
+ */
 public class ConfiguracionDAO {
 
+    /**
+     * Obtiene la cadena de distribución de clases de asientos registrada para un avión específico.
+     */
     public String obtenerDistribucion(String matricula) {
         String sql = "SELECT distribucion_clases FROM configuracion_asientos WHERE matricula = ?";
 

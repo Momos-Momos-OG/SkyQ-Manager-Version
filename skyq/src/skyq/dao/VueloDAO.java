@@ -14,9 +14,6 @@ public class VueloDAO {
 
     /**
      * Inserta un nuevo vuelo en la base de datos.
-     *
-     * @param vuelo Objeto Vuelo con matrícula, codigoVuelo, fechas y estado inicial.
-     * @return true si la inserción fue exitosa.
      */
     public boolean insertarVuelo(Vuelo vuelo) {
         String sql = "INSERT INTO vuelos (matricula, codigoVuelo, fechaSalida, fechaArribo, estado, origen, destino) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -38,9 +35,6 @@ public class VueloDAO {
 
     /**
      * Obtiene todos los vuelos asignados a una matrícula de avión específica.
-     *
-     * @param matricula Matrícula del avión.
-     * @return Lista de vuelos del avión.
      */
     public List<Vuelo> obtenerVuelosPorMatricula(String matricula) {
         List<Vuelo> lista = new ArrayList<>();
@@ -65,8 +59,6 @@ public class VueloDAO {
 
     /**
      * Obtiene todos los vuelos del sistema con información del avión (join con aviones).
-     *
-     * @return Lista completa de vuelos.
      */
     public List<Vuelo> obtenerTodosLosVuelos() {
         List<Vuelo> lista = new ArrayList<>();
@@ -91,10 +83,6 @@ public class VueloDAO {
 
     /**
      * Actualiza el estado de un vuelo.
-     *
-     * @param idVuelo ID del vuelo a actualizar.
-     * @param nuevoEstado Nuevo estado a asignar.
-     * @return true si la actualización fue exitosa.
      */
     public boolean actualizarEstadoVuelo(int idVuelo, String nuevoEstado) {
         String sql = "UPDATE vuelos SET estado = ? WHERE idVuelo = ?";
@@ -111,9 +99,6 @@ public class VueloDAO {
 
     /**
      * Elimina un vuelo del sistema.
-     *
-     * @param idVuelo ID del vuelo a eliminar.
-     * @return true si la eliminación fue exitosa.
      */
     public boolean eliminarVuelo(int idVuelo) {
         String sql = "DELETE FROM vuelos WHERE idVuelo = ?";
@@ -129,9 +114,6 @@ public class VueloDAO {
 
     /**
      * Actualiza todos los campos editables de un vuelo.
-     *
-     * @param vuelo Vuelo con datos actualizados.
-     * @return true si la actualización fue exitosa.
      */
     public boolean actualizarVuelo(Vuelo vuelo) {
         String sql = "UPDATE vuelos SET matricula = ?, codigoVuelo = ?, fechaSalida = ?, fechaArribo = ?, estado = ?, origen = ?, destino = ? WHERE idVuelo = ?";
@@ -154,9 +136,6 @@ public class VueloDAO {
 
     /**
      * Verifica si un avión tiene algún vuelo en estado activo.
-     *
-     * @param matricula Matrícula del avión.
-     * @return true si el avión está ocupado en un vuelo activo.
      */
     public boolean avionTieneVueloActivo(String matricula) {
         String sql = "SELECT COUNT(*) FROM vuelos WHERE matricula = ? AND estado IN ('En Vuelo', 'Programado')";

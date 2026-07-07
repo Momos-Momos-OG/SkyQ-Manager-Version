@@ -10,8 +10,14 @@ import skyq.database.ConexionBD;
 import skyq.model.Avion;
 import skyq.model.EstadoAvion;
 
+/**
+ * DAO para gestionar la persistencia y consulta de la flota de aviones.
+ */
 public class AvionDAO {
 
+    /**
+     * Guarda un nuevo avión en la base de datos.
+     */
     public boolean guardarAvion(Avion avion) {
         String sql = "INSERT INTO aviones (matricula, modelo, capacidad, estado) VALUES (?, ?, ?, ?)";
         try (Connection connection = ConexionBD.getConnection();
@@ -27,6 +33,9 @@ public class AvionDAO {
         }
     }
 
+    /**
+     * Verifica si una matrícula de avión específica ya existe registrada en el sistema.
+     */
     public boolean verificarMatriculaRegistrada(String matricula) {
         String sql = "SELECT COUNT(*) FROM aviones WHERE matricula = ?";
         try (Connection connection = ConexionBD.getConnection();
@@ -43,6 +52,9 @@ public class AvionDAO {
         return false;
     }
 
+    /**
+     * Obtiene la lista completa de todos los aviones en la flota.
+     */
     public List<Avion> obtenerAvionesFlota() {
         List<Avion> lista = new ArrayList<>();
         String sql = "SELECT matricula, modelo, capacidad, estado FROM aviones";
@@ -63,6 +75,9 @@ public class AvionDAO {
         return lista;
     }
 
+    /**
+     * Actualiza la información (modelo, capacidad, estado) de un avión existente.
+     */
     public boolean actualizarAvion(Avion avion) {
         String sql = "UPDATE aviones SET modelo = ?, capacidad = ?, estado = ? WHERE matricula = ?";
         try (Connection connection = ConexionBD.getConnection();
@@ -78,6 +93,9 @@ public class AvionDAO {
         }
     }
 
+    /**
+     * Actualiza específicamente la capacidad máxima de pasajeros de un avión.
+     */
     public boolean actualizarCapacidad(String matricula, int nuevaCapacidad) {
         String sql = "UPDATE aviones SET capacidad = ? WHERE matricula = ?";
         try (Connection connection = ConexionBD.getConnection();
@@ -91,6 +109,9 @@ public class AvionDAO {
         }
     }
 
+    /**
+     * Obtiene el estado actual (EN_TERMINAL, EN_VUELO, EN_MANTENIMIENTO) de un avión por matrícula.
+     */
     public EstadoAvion obtenerEstado(String matricula) {
         String sql = "SELECT estado FROM aviones WHERE matricula = ?";
         try (Connection connection = ConexionBD.getConnection();

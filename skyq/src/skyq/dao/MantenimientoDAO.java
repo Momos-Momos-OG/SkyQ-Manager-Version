@@ -7,8 +7,14 @@ import java.util.List;
 import skyq.database.ConexionBD;
 import skyq.model.Mantenimiento;
 
+/**
+ * DAO para la gestión del mantenimiento de los aviones de la flota.
+ */
 public class MantenimientoDAO {
 
+    /**
+     * Registra una nueva orden de mantenimiento para un avión.
+     */
     public boolean insertar(Mantenimiento m) {
         String sql = "INSERT INTO mantenimiento (matricula, fechaInicio, fechaFin, descripcion, estado) " +
                 "VALUES (?, ?, ?, ?, ?)";

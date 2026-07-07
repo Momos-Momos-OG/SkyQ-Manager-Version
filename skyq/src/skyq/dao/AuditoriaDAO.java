@@ -6,8 +6,14 @@ import java.util.List;
 import skyq.database.ConexionBD;
 import skyq.logic.LoggerManager;
 
+/**
+ * DAO para la persistencia y lectura del historial de auditoría de acciones críticas del sistema.
+ */
 public class AuditoriaDAO {
 
+    /**
+     * Registra una acción ejecutada por un usuario en la bitácora de auditoría.
+     */
     public boolean registrarAccion(String username, String accion, String detalle) {
         String sql = "INSERT INTO auditoria (username, accion, detalle) VALUES (?, ?, ?)";
         try (Connection conn = ConexionBD.getConnection();
