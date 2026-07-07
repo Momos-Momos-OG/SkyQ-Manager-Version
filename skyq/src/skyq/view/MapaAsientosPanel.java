@@ -20,7 +20,7 @@ public final class MapaAsientosPanel extends JPanel {
     
     private boolean multiSelect = false;
     private int limiteSeleccion = 0;
-    private final List<String> asientosSeleccionados = new ArrayList<>();
+    private final transient List<String> asientosSeleccionados = new ArrayList<>();
     private JToggleButton asientoSeleccionadoActual = null;
 
     private static final Color COLOR_OCUPADO = new Color(110, 80, 80); // Gris/Rojo tenue

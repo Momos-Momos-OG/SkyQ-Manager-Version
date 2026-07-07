@@ -61,3 +61,25 @@ Inicie la aplicación y autentíquese utilizando uno de los siguientes perfiles 
 | :--- | :--- | :--- | :--- |
 | **Gerente** | `gerente` | `Gerente@123` | CRUD de Flota de Aviones, Asignación de Cabina, Historial de Mantenimientos, Manager Override (Autorización). |
 | **Operario** | `operario` | `Operario@123` | Reserva/Venta de Boletos, Check-In, Control de Equipaje, Visualización de Simulación. |
+
+---
+
+## 📂 Estructura de Paquetes
+
+El proyecto está estructurado bajo los siguientes paquetes dentro de `skyq.src.skyq`:
+
+*   **`skyq.dao`**: Clases de Acceso a Datos (DAOs) para interactuar con la base de datos SQL Server (ej. `VueloDAO`, `AvionDAO`, `PasajeroDAO`, `EquipajeDAO`, `MantenimientoDAO`, `ConfiguracionDAO`, `AuditoriaDAO`).
+*   **`skyq.database`**: Configuración de conexión y pool de conexiones físico thread-safe (`ConexionBD`).
+*   **`skyq.logic`**: Lógica auxiliar de negocio y de control de interfaces (ej. `SesionManager`, `ValidadorFormulario`, `LoggerManager`).
+*   **`skyq.model`**: Clases de entidad del dominio (ej. `Vuelo`, `Avion`, `Pasajero`, `Equipaje`, `Mantenimiento`).
+*   **`skyq.services`**: Capa pura de lógica algorítmica y del negocio (`AbordajeService`, `EquipajeService`, `DesembarqueService`).
+*   **`skyq.view`**: Componentes gráficos y vistas Swing de la aplicación.
+
+---
+
+## 📝 Normas de Documentación y Comentarios
+
+Para mantener consistencia y limpieza en el código fuente:
+*   **Idioma**: Todos los comentarios agregados al proyecto deben ser escritos estrictamente en **español**.
+*   **Formato de Javadocs**: No se permiten etiquetas como `@param` o `@return`. Las descripciones de los parámetros y del valor de retorno deben estar redactadas de forma descriptiva dentro del cuerpo del comentario Javadoc para mayor fluidez de lectura.
+
